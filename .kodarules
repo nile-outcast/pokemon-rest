@@ -1,0 +1,54 @@
+Проект Zustand Study: Vite + React + TypeScript + Zustand, архитектура FSD, алиас @/ → src/.
+
+Эти требования важнее стиля соседнего кода: если в редактируемом файле написано иначе, пиши по правилам, а не по образцу файла.
+
+ТИПЫ — обязательны в любом создаваемом и изменяемом коде:
+1. Значение, которое может быть null, описывай только через Nullable<T> из 'typescript-extended-types'.
+   Запрещено писать вручную `T | null` и `T | null | undefined`.
+2. Массивы описывай только как `Array<T>`. Запрещено `T[]`.
+3. Проверку отсутствующего значения делай только гвардами `isNullish`, `isDefined` и т.д. из 'typescript-extended-types'.
+   Запрещено вручную `value === null`, `value !== null`, `value === undefined`.
+4. Нативные `enum` запрещены (erasableSyntaxOnly): используй union-типы или `as const` + union.
+5. Типы импортируй через `import type` и алиас `@/`, а не относительными путями.
+
+ПРИМЕРЫ:
+```ts
+// ✅
+data: Nullable<Pokemon>
+items: Array<Pokemon>
+if (isDefined(pokemon)) { ... }
+
+// ❌
+data: Pokemon | null
+items: Pokemon[]
+if (pokemon !== null) { ... }
+```
+
+ОБОРОТНЫЕ ПРАВИЛА:
+- Перед тем как показать результат, перечитай свой код и устрани нарушения пунктов 1-4.
+- Не переписывай существующую логику «по пути»: точечные правки, без лишнего рефакторинга и переименований.
+- Не добавляй зависимости без явного запроса.
+- Не делай git commit / push без явного запроса.
+
+СТРУКТУРА (FSD):
+- `app/` — вход и глобальные стили: `main.tsx`, `app.tsx`, `styles/`
+- `pages/` — страницы, компоненты в `ui/`
+- `features/` — фичи, публичный вход через `index.ts`, компоненты в `ui/`
+- `entities/` — сущности: стор в `model/`, типы в `types.ts`
+- `shared/` — переиспользуемое: `config/`, `helpers/`, `models/`, `types/`
+  Фабрики слайсов и моделей (`create-*-slice`, `create-*-model`) — в `shared/models`,
+  контракты — в `shared/types`.
+Хуков в проекте нет: не создавай `hooks/`, логика живёт в компонентах,
+`shared/models` и `shared/helpers`.
+
+КОМАНДЫ:
+- `npm run dev` — дев-сервер
+- `npm run lint` / `npm run lint:fix` — ESLint (flat config, `eslint.config.js`)
+- `npm run ts-check` — `tsc -b --force`
+- `npm run build` — `tsc -b && vite build`
+
+ОФОРМЛЕНИЕ:
+- Prettier: без `;`, одинарные кавычки. Это намеренно, не спорить и не «исправлять».
+- Форматирование применяется при сохранении в редакторе — правь так, будто оно уже применено.
+- Комментарии на русском языке.
+- Проверка результата: `npm run lint` и `npm run build` должны проходить без ошибок.
