@@ -1,5 +1,5 @@
 {
-  "name": "pokemon-rest",
+  "name": "@pokemon-rest/web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,6 +12,7 @@
     "ts-check": "tsc -b --force"
   },
   "dependencies": {
+    "@pokemon-rest/shared": "*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "typescript-extended-types": "^0.1.0",
