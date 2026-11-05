@@ -4,11 +4,12 @@ import importX from 'eslint-plugin-import-x'
 import prettier from 'eslint-plugin-prettier/recommended'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
-export default tseslint.config(
-  { ignores: ['dist', 'node_modules'] },
+export default defineConfig(
+  globalIgnores(['**/dist']),
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -84,7 +85,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['vite.config.ts'],
+    files: ['**/vite.config.ts'],
     languageOptions: {
       globals: globals.node,
     },
@@ -125,4 +126,15 @@ export default tseslint.config(
     },
   },
   prettier,
+  {
+    // Бэкенд выполняется в Node: нужны process, __dirname-аналоги и т.д.
+    // Правила фронтенда (Nullable, Array<T>, isNullish) не применимы к apps/api
+    files: ['apps/api/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+    rules: {
+      'no-restricted-syntax': 'off',
+    },
+  },
 )

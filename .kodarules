@@ -1,8 +1,11 @@
-Проект Zustand Study: Vite + React + TypeScript + Zustand, архитектура FSD, алиас @/ → src/.
+Проект Pokemon REST: монорепо (npm workspaces): 
+apps/web — Vite + React + TypeScript + Zustand (FSD, алиас @/ → apps/web/src/), 
+apps/api — Fastify + Drizzle + Postgres, 
+packages/shared — zod-контракты.
 
 Эти требования важнее стиля соседнего кода: если в редактируемом файле написано иначе, пиши по правилам, а не по образцу файла.
 
-ТИПЫ — обязательны в любом создаваемом и изменяемом коде:
+ТИПЫ — обязательны в любом создаваемом и изменяемом коде (apps/web/src, packages/shared):
 1. Значение, которое может быть null, описывай только через Nullable<T> из 'typescript-extended-types'.
    Запрещено писать вручную `T | null` и `T | null | undefined`.
 2. Массивы описывай только как `Array<T>`. Запрещено `T[]`.
@@ -31,21 +34,26 @@ if (pokemon !== null) { ... }
 - Не делай git commit / push без явного запроса.
 
 СТРУКТУРА (FSD):
-- `app/` — вход и глобальные стили: `main.tsx`, `app.tsx`, `styles/`
-- `pages/` — страницы, компоненты в `ui/`
-- `features/` — фичи, публичный вход через `index.ts`, компоненты в `ui/`
-- `entities/` — сущности: стор в `model/`, типы в `types.ts`
-- `shared/` — переиспользуемое: `config/`, `helpers/`, `models/`, `types/`
+- `apps/web/src/app/` — вход и глобальные стили: `main.tsx`, `app.tsx`, `styles/`
+- `apps/web/src/pages/` — страницы, компоненты в `ui/`
+- `apps/web/src/features/` — фичи, публичный вход через `index.ts`, компоненты в `ui/`
+- `apps/web/src/entities/` — сущности: стор в `model/`, типы в `types.ts`
+- `apps/web/src/shared/` — переиспользуемое: `config/`, `helpers/`, `models/`, `types/`
   Фабрики слайсов и моделей (`create-*-slice`, `create-*-model`) — в `shared/models`,
   контракты — в `shared/types`.
+- `packages/shared/` — zod-контракты и TS-типы для API (общие с apps/api).
+- `apps/api/` — Fastify-сервер: `plugins/`, `routes/`, `db/`, `scripts/`.
 Хуков в проекте нет: не создавай `hooks/`, логика живёт в компонентах,
 `shared/models` и `shared/helpers`.
 
 КОМАНДЫ:
-- `npm run dev` — дев-сервер
+- `npm run dev:web` — дев-сервер фронтенда
+- `npm run dev:api` — дев-сервер бэкенда
+- `docker compose up -d` — запуск базы данных
+- `npm run seed` — обкачка данных из PokeAPI
+- `npm run build` — `tsc -b && vite build` (все workspace)
 - `npm run lint` / `npm run lint:fix` — ESLint (flat config, `eslint.config.js`)
 - `npm run ts-check` — `tsc -b --force`
-- `npm run build` — `tsc -b && vite build`
 
 ОФОРМЛЕНИЕ:
 - Prettier: без `;`, одинарные кавычки. Это намеренно, не спорить и не «исправлять».

@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 
-import type { Pokemon, PokemonListResponse } from '@/entities/pokemon/types'
+import type {
+  PokemonListItem,
+  PokemonListResponse,
+} from '@/entities/pokemon/types'
 import { POKEMON_API_BASE_URL } from '@/shared/config/pokemon-api'
 import { createApiRequest } from '@/shared/models/create-api-request'
 import {
@@ -14,19 +17,12 @@ import {
 import type { ApiCallErrorResponse } from '@/shared/types/api-call'
 
 interface PokemonState {
-  items: Array<Pokemon>
+  items: Array<PokemonListItem>
   pagination: PaginationModel
   loadingStage: LoadingStageModel
   loadingMoreStage: LoadingStageModel
   fetchPokemonList: () => Promise<void>
   fetchNextPage: () => Promise<void>
-}
-
-function normalizePokemonList(response: PokemonListResponse): Array<Pokemon> {
-  return response.results.map((raw) => ({
-    id: Number(raw.url.match(/\/pokemon\/(\d+)\/$/)?.[1] ?? 0),
-    name: raw.name,
-  }))
 }
 
 function toErrorMessage(response: ApiCallErrorResponse<Error>): string {
@@ -78,11 +74,11 @@ export const usePokemonStore = create<PokemonState>()((set, get) => ({
 
     get().loadingStage.success()
 
-    set({ items: normalizePokemonList(result.data) })
+    set({ items: result.data.items })
 
     // offset под-модели — начало текущей страницы: загружена первая, значит 0
     get().pagination.reset()
-    get().pagination.setTotal(result.data.count)
+    get().pagination.setTotal(result.data.total)
   },
 
   fetchNextPage: async () => {
@@ -120,9 +116,9 @@ export const usePokemonStore = create<PokemonState>()((set, get) => ({
 
     get().loadingMoreStage.success()
 
-    set({ items: [...get().items, ...normalizePokemonList(result.data)] })
+    set({ items: [...get().items, ...result.data.items] })
 
     // Фиксируем total: от него зависит hasMore для следующего перехода
-    get().pagination.setTotal(result.data.count)
+    get().pagination.setTotal(result.data.total)
   },
 }))
