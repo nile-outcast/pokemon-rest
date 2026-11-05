@@ -38,13 +38,11 @@ if (pokemon !== null) { ... }
 - `apps/web/src/pages/` — страницы, компоненты в `ui/`
 - `apps/web/src/features/` — фичи, публичный вход через `index.ts`, компоненты в `ui/`
 - `apps/web/src/entities/` — сущности: стор в `model/`, типы в `types.ts`
-- `apps/web/src/shared/` — переиспользуемое: `config/`, `helpers/`, `models/`, `types/`
+- `apps/web/src/shared/` — переиспользуемое: `config/`, `helpers/`, `models/`, `types/`, `hooks`
   Фабрики слайсов и моделей (`create-*-slice`, `create-*-model`) — в `shared/models`,
   контракты — в `shared/types`.
 - `packages/shared/` — zod-контракты и TS-типы для API (общие с apps/api).
 - `apps/api/` — Fastify-сервер: `plugins/`, `routes/`, `db/`, `scripts/`.
-Хуков в проекте нет: не создавай `hooks/`, логика живёт в компонентах,
-`shared/models` и `shared/helpers`.
 
 КОМАНДЫ:
 - `npm run dev:web` — дев-сервер фронтенда

@@ -5,6 +5,8 @@ import type {
   PokemonListResponse,
 } from '@/entities/pokemon/types'
 import { POKEMON_API_BASE_URL } from '@/shared/config/pokemon-api'
+import { POKEMON_QUERY_PARAM } from '@/shared/config/pokemon-query'
+import { readQueryParam, writeQueryParams } from '@/shared/helpers/url-query'
 import { createApiRequest } from '@/shared/models/create-api-request'
 import {
   createLoadingStageModel,
@@ -18,9 +20,12 @@ import type { ApiCallErrorResponse } from '@/shared/types/api-call'
 
 interface PokemonState {
   items: Array<PokemonListItem>
+  /** Строка поиска по имени — часть query-состояния списка */
+  search: string
   pagination: PaginationModel
   loadingStage: LoadingStageModel
   loadingMoreStage: LoadingStageModel
+  setSearch: (value: string) => void
   fetchPokemonList: () => Promise<void>
   fetchNextPage: () => Promise<void>
 }
@@ -40,25 +45,59 @@ const pokemonListRequest = createApiRequest<PokemonListResponse, Error>(
   },
 )
 
+/**
+ * Идентификатор последнего запроса списка.
+ *
+ * При быстром вводе отмена прошлого запроса приходит уже после того, как
+ * новый успел перейти в `loading`. Счётчик позволяет устаревшему ответу
+ * не сбрасывать `loadingStage` более нового запроса.
+ */
+let listRequestId = 0
+
 export const usePokemonStore = create<PokemonState>()((set, get) => ({
   items: [],
+  search: readQueryParam(POKEMON_QUERY_PARAM.search) ?? '',
   pagination: createPaginationModel(set, get, 'pagination', { limit: 40 }),
   loadingStage: createLoadingStageModel(set, get, 'loadingStage'),
   loadingMoreStage: createLoadingStageModel(set, get, 'loadingMoreStage'),
 
+  setSearch: (value: string) => {
+    set({ search: value })
+  },
+
   fetchPokemonList: async () => {
-    if (get().loadingStage.isLoading) return
+    if (get().loadingStage.isLoading || get().loadingMoreStage.isLoading) {
+      pokemonListRequest.cancel()
+    }
+
+    // Смена фильтра всегда начинает с первой страницы: сброс делаем
+    // один раз перед фактическим запросом, а не на каждый символ ввода
+    get().pagination.reset()
+
+    const trimmedSearch = get().search.trim()
+
+    // В адресе фиксируем применённый фильтр — перезагрузка страницы
+    // восстановит его из URL
+    writeQueryParams({ [POKEMON_QUERY_PARAM.search]: trimmedSearch })
 
     get().loadingStage.loading()
     // Новая загрузка списка делает ошибку дозагрузки неактуальной
     get().loadingMoreStage.reset()
 
+    const requestId = ++listRequestId
+
     const result = await pokemonListRequest.call({
       query: {
         limit: get().pagination.limit,
         offset: 0,
+        search: trimmedSearch,
       },
     })
+
+    // Ответ устаревшего запроса — состояние принадлежит новому
+    if (requestId !== listRequestId) {
+      return
+    }
 
     if (result.isError) {
       if (result.isCancelled) {
@@ -76,14 +115,19 @@ export const usePokemonStore = create<PokemonState>()((set, get) => ({
 
     set({ items: result.data.items })
 
-    // offset под-модели — начало текущей страницы: загружена первая, значит 0
-    get().pagination.reset()
+    // Фиксируем total: от него зависит hasMore для дозагрузки
     get().pagination.setTotal(result.data.total)
   },
 
   fetchNextPage: async () => {
     // Защита от параллельных запросов и загрузки при отсутствии данных
-    if (get().loadingMoreStage.isLoading || !get().pagination.hasMore) return
+    if (
+      get().loadingStage.isLoading ||
+      get().loadingMoreStage.isLoading ||
+      !get().pagination.hasMore
+    ) {
+      return
+    }
 
     get().loadingMoreStage.loading()
     // Оптимистичный переход: offset под-модели — начало текущей страницы,
@@ -96,6 +140,7 @@ export const usePokemonStore = create<PokemonState>()((set, get) => ({
       query: {
         limit,
         offset,
+        search: get().search.trim(),
       },
     })
 

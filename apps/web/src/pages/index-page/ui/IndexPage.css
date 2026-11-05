@@ -4,8 +4,8 @@
   align-items: center;
   gap: 25px;
   flex-grow: 1;
-  width: 100%;
   padding: 0 20px 32px;
+  width: 100%;
   box-sizing: border-box;
 
   @media (max-width: 1024px) {
@@ -14,22 +14,32 @@
   }
 }
 
-/* Липкий заголовок: вся ширина, текст по центру */
-.index-page__header {
+/* Липкая панель: заголовок и фильтры остаются над списком при прокрутке */
+.index-page__toolbar {
   position: sticky;
   top: 0;
   z-index: 1;
-  width: calc(100% + 40px);
-  margin: 0;
-  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-block: 16px;
+  width: 100%;
   background: var(--bg);
+
+  @media (max-width: 1024px) {
+    gap: 12px;
+    padding-block: 12px;
+  }
+}
+
+.index-page__header {
+  margin: 0;
   text-align: center;
   font-size: 40px;
   letter-spacing: -1.2px;
 
   @media (max-width: 1024px) {
-    width: calc(100% + 32px);
-    padding: 12px 16px;
     font-size: 28px;
   }
 }

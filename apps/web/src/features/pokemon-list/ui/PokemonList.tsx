@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react'
-import type { Nullable } from 'typescript-extended-types'
+import { useEffect } from 'react'
 
 import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
+import { useIntersectionObserver } from '@/shared/hooks/use-intersection-observer'
 
 import './PokemonList.css'
 
@@ -20,87 +20,46 @@ export function PokemonList() {
   const fetchPokemonList = usePokemonStore((state) => state.fetchPokemonList)
   const fetchNextPage = usePokemonStore((state) => state.fetchNextPage)
 
-  const sentinelRef = useRef<HTMLLIElement>(null)
-  const observerRef = useRef<IntersectionObserver>(null)
-
   useEffect(() => {
     void fetchPokemonList()
   }, [fetchPokemonList])
 
-  // Callback ref: observer создаётся при появлении sentinel в DOM.
-  // fetchNextPage создаётся вместе со стором, его ссылка стабильна,
-  // поэтому колбэк не пересоздаётся при дозагрузке страниц.
-  const setSentinelRef = useCallback(
-    (el: Nullable<HTMLLIElement>) => {
-      sentinelRef.current = el
-
-      if (!el) {
-        observerRef.current?.disconnect()
-        observerRef.current = null
-
-        return
-      }
-
-      // Observer уже наблюдает за этим же элементом — не пересоздаём.
-      if (observerRef.current) {
-        return
-      }
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (entries[0].isIntersecting) {
-            void fetchNextPage()
-          }
-        },
-        { rootMargin: '200px' },
-      )
-
-      observer.observe(el)
-      observerRef.current = observer
-    },
-    [fetchNextPage],
-  )
-
-  // Sentinel может остаться во вьюпорте после дозагрузки — нового события
-  // пересечения не будет. Перезаряжаем наблюдателя на том же элементе,
-  // чтобы он снова сообщил о видимости.
-  useEffect(() => {
-    const el = sentinelRef.current
-    const observer = observerRef.current
-
-    if (!el || !observer) return
-
-    observer.unobserve(el)
-    observer.observe(el)
-  }, [isLoadingMore])
-
-  if (isLoading) {
-    return (
-      <div className="pokemon-list__centered">
-        <p className="pokemon-list__status">Загрузка покемонов…</p>
-      </div>
-    )
-  }
-
-  if (loadErrorMessage) {
-    return (
-      <div className="pokemon-list__centered">
-        <div className="pokemon-list__error">
-          <p>Не удалось загрузить покемонов: {loadErrorMessage}</p>
-          <button
-            type="button"
-            className="pokemon-list__retry"
-            onClick={() => void fetchPokemonList()}
-          >
-            Повторить
-          </button>
-        </div>
-      </div>
-    )
-  }
+  const { setSentinelRef } = useIntersectionObserver<HTMLLIElement>({
+    fetchMoreFn: fetchNextPage,
+    isLoading: isLoading || isLoadingMore,
+  })
 
   if (items.length === 0) {
-    return null
+    if (isLoading) {
+      return (
+        <div className="pokemon-list__centered">
+          <p className="pokemon-list__status">Загрузка покемонов…</p>
+        </div>
+      )
+    }
+
+    if (loadErrorMessage) {
+      return (
+        <div className="pokemon-list__centered">
+          <div className="pokemon-list__error">
+            <p>Не удалось загрузить покемонов: {loadErrorMessage}</p>
+            <button
+              type="button"
+              className="pokemon-list__retry"
+              onClick={() => void fetchPokemonList()}
+            >
+              Повторить
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="pokemon-list__centered">
+        <p className="pokemon-list__status">Покемоны не найдены</p>
+      </div>
+    )
   }
 
   return (

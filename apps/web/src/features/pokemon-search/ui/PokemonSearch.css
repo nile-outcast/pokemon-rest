@@ -1,0 +1,31 @@
+.pokemon-search {
+  width: 100%;
+  max-width: 500px;
+}
+
+.pokemon-search__input {
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 18px;
+  font-family: var(--sans);
+  color: var(--text-h);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: var(--text);
+  }
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+  }
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+    padding: 8px 12px;
+  }
+}
