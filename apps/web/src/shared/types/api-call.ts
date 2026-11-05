@@ -1,4 +1,4 @@
-import type { BaseObject } from 'typescript-extended-types'
+import type { BaseObject, Nullable } from 'typescript-extended-types'
 
 type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
@@ -21,7 +21,7 @@ export interface ApiCallSuccessResponse<D> {
 
 export interface ApiCallErrorResponse<E extends Error> {
   isError: true
-  data?: E
+  data?: Nullable<E>
   isCancelled?: never
   rawError?: unknown
 }

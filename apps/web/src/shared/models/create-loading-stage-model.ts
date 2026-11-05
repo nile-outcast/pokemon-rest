@@ -19,7 +19,7 @@ interface LoadingStageData {
 /**
  * Начальные данные стадии загрузки.
  */
-export const INITIAL_DATA: LoadingStageData = {
+const INITIAL_DATA: LoadingStageData = {
   loadStatus: 'initial',
   errorMessage: null,
 }

@@ -42,7 +42,7 @@ export function PokemonList() {
       }
 
       // Observer уже наблюдает за этим же элементом — не пересоздаём.
-      if (observerRef.current?.takeRecords && observerRef.current) {
+      if (observerRef.current) {
         return
       }
 

@@ -34,28 +34,30 @@ function buildUrl(path: string, query?: BaseObject): string {
   return `${path}${separator}${params.toString()}`
 }
 
-async function safeParse<T>(response: Response): Promise<T | undefined> {
+async function safeParse<T>(response: Response): Promise<Nullable<T>> {
   const contentType = response.headers.get('content-type')
 
   if (!contentType || !contentType.includes('application/json')) {
-    return undefined
+    return null
   }
 
   try {
     return await response.json()
   } catch {
-    return undefined
+    return null
   }
 }
 
 function getRequestBody<Body extends BaseObject | FormData>(
   body?: Body,
-): FormData | string | undefined {
-  if (isNullish(body)) return
+): Nullable<FormData | string> {
+  if (isNullish(body)) {
+    return null
+  }
 
   const isFormData = body instanceof FormData
 
-  return isFormData ? body : JSON.stringify(body)
+  return isFormData ? body : (JSON.stringify(body) ?? null)
 }
 
 /**
@@ -75,7 +77,9 @@ export function createApiRequest<D, E extends Error = Error>(
   return {
     async call({ query, body }) {
       controller?.abort()
-      controller = new AbortController()
+
+      const currentController = new AbortController()
+      controller = currentController
 
       try {
         const url = buildUrl(`${baseUrl}${path}`, query)
@@ -91,7 +95,7 @@ export function createApiRequest<D, E extends Error = Error>(
               : 'application/json',
           },
           body: getRequestBody(body),
-          signal: controller.signal,
+          signal: currentController.signal,
         })
 
         if (!response.ok) {
@@ -106,7 +110,7 @@ export function createApiRequest<D, E extends Error = Error>(
           data: await response.json(),
         }
       } catch (rawError) {
-        if (controller?.signal.aborted) {
+        if (currentController.signal.aborted) {
           return {
             isCancelled: true,
             isError: true,
@@ -119,7 +123,9 @@ export function createApiRequest<D, E extends Error = Error>(
           rawError,
         }
       } finally {
-        controller = null
+        if (controller === currentController) {
+          controller = null
+        }
       }
     },
 
