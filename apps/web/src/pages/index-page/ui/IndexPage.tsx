@@ -1,3 +1,4 @@
+import { PokemonFilters } from '@/features/pokemon-filters'
 import { PokemonList } from '@/features/pokemon-list'
 import { PokemonSearch } from '@/features/pokemon-search'
 import './IndexPage.css'
@@ -8,6 +9,7 @@ export function IndexPage() {
       <div className="index-page__toolbar">
         <h1 className="index-page__header">Pokemon</h1>
         <PokemonSearch />
+        <PokemonFilters />
       </div>
       <PokemonList />
     </section>

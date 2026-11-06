@@ -13,7 +13,7 @@ import type {
 
 interface ApiRequestHandle<D, E extends Error = Error> {
   call: <Body extends BaseObject | FormData = BaseObject>(
-    params: ApiCallArgs<Body>,
+    params?: ApiCallArgs<Body>,
   ) => Promise<ApiCallResponse<D, E>>
   cancel: () => void
   isPending: () => boolean
@@ -87,16 +87,16 @@ export function createApiRequest<D, E extends Error = Error>(
   let controller: Nullable<AbortController> = null
 
   return {
-    async call({ query, body }) {
+    async call(params) {
       controller?.abort()
 
       const currentController = new AbortController()
       controller = currentController
 
       try {
-        const url = buildUrl(`${baseUrl}${path}`, query)
+        const url = buildUrl(`${baseUrl}${path}`, params?.query)
 
-        const isFormData = body instanceof FormData
+        const isFormData = params?.body instanceof FormData
 
         const response = await fetch(url, {
           method: config.method ?? 'GET',
@@ -106,7 +106,7 @@ export function createApiRequest<D, E extends Error = Error>(
               ? 'multipart/form-data'
               : 'application/json',
           },
-          body: getRequestBody(body),
+          body: getRequestBody(params?.body),
           signal: currentController.signal,
         })
 

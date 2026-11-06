@@ -49,13 +49,13 @@ export const pokemonListResponseSchema = z.object({
 
 export type PokemonListResponse = z.infer<typeof pokemonListResponseSchema>
 
-/** Опция селекта типа — id для key, name для значения фильтра */
-export const pokemonTypeOptionSchema = z.object({
+/** Опция селекта типа — id для key, name для значения */
+export const pokemonOptionSchema = z.object({
   id: z.number().int(),
   name: z.string(),
 })
 
-export type PokemonTypeOption = z.infer<typeof pokemonTypeOptionSchema>
+export type PokemonOption = z.infer<typeof pokemonOptionSchema>
 
 /** Границы числового диапазона, чтобы пресеты строились из данных */
 export const numberRangeSchema = z.object({
@@ -67,7 +67,7 @@ export type NumberRange = z.infer<typeof numberRangeSchema>
 
 /** Ответ GET /api/pokemon/filters */
 export const pokemonFiltersResponseSchema = z.object({
-  types: z.array(pokemonTypeOptionSchema),
+  types: z.array(pokemonOptionSchema),
   attack: numberRangeSchema,
   experience: numberRangeSchema,
 })

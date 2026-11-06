@@ -1,12 +1,9 @@
+import type { PokemonListItem, PokemonListResponse } from '@pokemon-rest/shared'
 import { create } from 'zustand'
 
-import type {
-  PokemonListItem,
-  PokemonListResponse,
-} from '@/entities/pokemon/types'
 import { POKEMON_API_BASE_URL } from '@/shared/config/pokemon-api'
-import { POKEMON_QUERY_PARAM } from '@/shared/config/pokemon-query'
-import { readQueryParam, writeQueryParams } from '@/shared/helpers/url-query'
+import { toErrorMessage } from '@/shared/helpers/to-error-message'
+import { writeQueryParams } from '@/shared/helpers/url-query'
 import { createApiRequest } from '@/shared/models/create-api-request'
 import {
   createLoadingStageModel,
@@ -16,33 +13,24 @@ import {
   createPaginationModel,
   type PaginationModel,
 } from '@/shared/models/create-pagination-model'
-import type { ApiCallErrorResponse } from '@/shared/types/api-call'
 
-interface PokemonState {
+import {
+  createPokemonFiltersSlice,
+  type PokemonFiltersSlice,
+} from './pokemon-filters-slice'
+
+interface PokemonState extends PokemonFiltersSlice {
   items: Array<PokemonListItem>
-  /** Строка поиска по имени — часть query-состояния списка */
-  search: string
   pagination: PaginationModel
   loadingStage: LoadingStageModel
   loadingMoreStage: LoadingStageModel
-  setSearch: (value: string) => void
   fetchPokemonList: () => Promise<void>
   fetchNextPage: () => Promise<void>
 }
 
-function toErrorMessage(response: ApiCallErrorResponse<Error>): string {
-  if (response.data) {
-    return `Ошибка сервера: ${response.data.message}`
-  }
-
-  return 'Неизвестная ошибка'
-}
-
 const pokemonListRequest = createApiRequest<PokemonListResponse, Error>(
   `/pokemon`,
-  {
-    baseUrl: POKEMON_API_BASE_URL,
-  },
+  { baseUrl: POKEMON_API_BASE_URL },
 )
 
 /**
@@ -55,42 +43,38 @@ const pokemonListRequest = createApiRequest<PokemonListResponse, Error>(
 let listRequestId = 0
 
 export const usePokemonStore = create<PokemonState>()((set, get) => ({
+  ...createPokemonFiltersSlice(set, get),
   items: [],
-  search: readQueryParam(POKEMON_QUERY_PARAM.search) ?? '',
-  pagination: createPaginationModel(set, get, 'pagination', { limit: 40 }),
   loadingStage: createLoadingStageModel(set, get, 'loadingStage'),
   loadingMoreStage: createLoadingStageModel(set, get, 'loadingMoreStage'),
 
-  setSearch: (value: string) => {
-    set({ search: value })
-  },
+  pagination: createPaginationModel(set, get, 'pagination', { limit: 40 }),
 
   fetchPokemonList: async () => {
     if (get().loadingStage.isLoading || get().loadingMoreStage.isLoading) {
       pokemonListRequest.cancel()
     }
 
+    const requestId = ++listRequestId
+
     // Смена фильтра всегда начинает с первой страницы: сброс делаем
     // один раз перед фактическим запросом, а не на каждый символ ввода
     get().pagination.reset()
 
-    const trimmedSearch = get().search.trim()
+    const filters = get().filters()
 
     // В адресе фиксируем применённый фильтр — перезагрузка страницы
     // восстановит его из URL
-    writeQueryParams({ [POKEMON_QUERY_PARAM.search]: trimmedSearch })
+    writeQueryParams(filters)
 
     get().loadingStage.loading()
     // Новая загрузка списка делает ошибку дозагрузки неактуальной
     get().loadingMoreStage.reset()
 
-    const requestId = ++listRequestId
-
     const result = await pokemonListRequest.call({
       query: {
-        limit: get().pagination.limit,
-        offset: 0,
-        search: trimmedSearch,
+        ...get().pagination,
+        ...filters,
       },
     })
 
@@ -134,13 +118,10 @@ export const usePokemonStore = create<PokemonState>()((set, get) => ({
     // поэтому следующая страница уже сдвинута и запрашивается как текущая
     get().pagination.next()
 
-    const { limit, offset } = get().pagination
-
     const result = await pokemonListRequest.call({
       query: {
-        limit,
-        offset,
-        search: get().search.trim(),
+        ...get().pagination,
+        ...get().filters(),
       },
     })
 

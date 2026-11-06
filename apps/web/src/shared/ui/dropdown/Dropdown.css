@@ -1,0 +1,115 @@
+/*
+ * Макет (фрейм 9:972): триггер 163×27 с подписью 12px и стрелкой 10×10,
+ * панель 163×82. В проекте базовый шрифт 18px вместо 12px в макете,
+ * поэтому высота триггера и внутренние отступы увеличены пропорционально,
+ * а цвета взяты из существующих токенов.
+ */
+.dropdown__trigger {
+  /* Radix вешает data-state на триггер: стрелка разворачивается по нему */
+  display: block;
+}
+
+.dropdown__button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 163px;
+  padding: 8px 12px;
+  font: 14px/145% var(--sans);
+  letter-spacing: 0.14px;
+  color: var(--text-h);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+  }
+
+  /* Открытый триггер подсвечивается: видно, какой фильтр активен */
+  &[data-state='open'] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+  }
+
+  @media (max-width: 1024px) {
+    width: 140px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+}
+
+.dropdown__label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Стрелка-шеврон вместо REGULAR_POLYGON из макета (10×10) */
+.dropdown__arrow {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--text);
+  border-bottom: 1.5px solid var(--text);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.15s;
+
+  [data-state='open'] & {
+    transform: translateY(2px) rotate(-135deg);
+  }
+}
+
+.dropdown__content {
+  z-index: 2;
+  min-width: 163px;
+  padding: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  outline: none;
+
+  /* Анимация появления: Radix держит панель в DOM до конца анимации */
+  &[data-state='open'] {
+    animation: dropdown-in 0.12s ease-out;
+  }
+
+  &[data-state='closed'] {
+    animation: dropdown-out 0.1s ease-in;
+  }
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dropdown-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}

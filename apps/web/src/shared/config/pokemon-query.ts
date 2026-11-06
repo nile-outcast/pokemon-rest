@@ -1,3 +1,9 @@
+import type { PokemonListQuery } from '@pokemon-rest/shared'
+
+export type PokemonFilters = Omit<PokemonListQuery, 'offset' | 'limit'>
+
+type FilterKeys = keyof PokemonFilters
+
 /**
  * Имена query-параметров списка покемонов.
  *
@@ -6,11 +12,11 @@
  * поэтому новый фильтр добавляется одной строкой здесь и дальше
  * переиспользуется и в параметрах запроса, и в URL.
  */
-export const POKEMON_QUERY_PARAM = {
+export const POKEMON_QUERY_PARAM: Record<FilterKeys, FilterKeys> = {
   search: 'search',
   type: 'type',
   attackMin: 'attackMin',
   attackMax: 'attackMax',
   experienceMin: 'experienceMin',
   experienceMax: 'experienceMax',
-} as const
+}
