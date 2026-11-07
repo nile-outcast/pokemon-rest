@@ -5,7 +5,7 @@ import './FilterMultiSelect.css'
 interface FilterMultiSelectProps {
   options: Array<PokemonOption>
   selected: Array<number>
-  onToggle: (name: number) => void
+  onChange: (id: number) => void
 }
 
 /**
@@ -18,7 +18,7 @@ interface FilterMultiSelectProps {
 export function FilterMultiSelect({
   options,
   selected,
-  onToggle,
+  onChange,
 }: FilterMultiSelectProps) {
   return (
     <div
@@ -38,7 +38,7 @@ export function FilterMultiSelect({
               className={`filter-multi-select__option ${
                 isSelected ? 'filter-multi-select__option--selected' : ''
               }`}
-              onClick={() => onToggle(type.id)}
+              onClick={() => onChange(type.id)}
               aria-pressed={isSelected}
             >
               {/* Галочка делает множественный выбор видимым: у невыбранных

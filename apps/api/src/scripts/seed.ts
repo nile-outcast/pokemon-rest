@@ -18,7 +18,7 @@ import { eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import pg from 'pg'
 
-import { pokemon, pokemonTypes, types } from '../db/schema'
+import { pokemonTable, pokemonTypesTable, typesTable } from '../db/schema'
 
 const { Pool } = pg
 
@@ -204,7 +204,7 @@ async function main() {
 
     // Справочник типов неизменяем: существующие записи не трогаем
     await db
-      .insert(types)
+      .insert(typesTable)
       .values(
         detail.types.map((t) => ({
           id: extractTypeId(t.type.url),
@@ -215,7 +215,7 @@ async function main() {
 
     // Upsert покемона: при повторном запуске обновляем данные из PokeAPI
     await db
-      .insert(pokemon)
+      .insert(pokemonTable)
       .values({
         id: detail.id,
         name: detail.name,
@@ -225,7 +225,7 @@ async function main() {
         spriteUrl,
       })
       .onConflictDoUpdate({
-        target: pokemon.id,
+        target: pokemonTable.id,
         set: {
           name: detail.name,
           attack,
@@ -236,10 +236,12 @@ async function main() {
       })
 
     // pokemon_types — полностью перезаписываем для этого покемона
-    await db.delete(pokemonTypes).where(eq(pokemonTypes.pokemonId, detail.id))
+    await db
+      .delete(pokemonTypesTable)
+      .where(eq(pokemonTypesTable.pokemonId, detail.id))
 
     if (detail.types.length > 0) {
-      await db.insert(pokemonTypes).values(
+      await db.insert(pokemonTypesTable).values(
         detail.types.map((t) => ({
           pokemonId: detail.id,
           typeId: extractTypeId(t.type.url),
@@ -254,7 +256,7 @@ async function main() {
   // Итоговая статистика
   const [total] = await db
     .select({ count: sql<number>`count(*)` })
-    .from(pokemon)
+    .from(pokemonTable)
   process.stderr.write(`\n\n✅ done — ${total.count} pokemon in database\n`)
 
   await pool.end()

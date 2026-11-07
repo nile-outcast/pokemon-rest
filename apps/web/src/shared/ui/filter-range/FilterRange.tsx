@@ -1,8 +1,8 @@
 import type { NumberRange } from '@pokemon-rest/shared'
 import type { ChangeEvent } from 'react'
-import { useCallback, useId, useState } from 'react'
-import type { Nullable } from 'typescript-extended-types'
-import { isNullish } from 'typescript-extended-types'
+import { useId, useState } from 'react'
+import { isDefined, isNullish } from 'typescript-extended-types'
+import z from 'zod'
 
 import type { RangeValue } from '@/shared/types/values'
 
@@ -15,33 +15,34 @@ interface FilterRangeProps {
   range: NumberRange
   onChange: (value: RangeValue) => void
   /** Закрытие дропдауна после применения */
-  close: () => void
+  onClose: () => void
+  /** Доп. действие после успешного применения, например вызов API */
+  onApply?: () => void
+}
+
+function clamp(value: number, range: NumberRange): number {
+  return Math.min(Math.max(value, range.min), range.max)
 }
 
 /**
  * Черновик числа из текстового поля.
  *
  * Пустое поле и мусор (`''`, `abc`) дают `null` — фильтр считается
- * снятым, а не «ноль».
+ * снятым, а не «ноль». Значит `null` здесь — успешный результат, а не
+ * ошибка валидации, и отвечает за него `.catch`, а не `.nullable`.
+ *
+ * `NaN` отсекает `z.number()` внутри `.pipe`, границы справочника —
+ * последний `.transform`: наружу схема отдаёт либо `null`, либо число
+ * уже внутри `range`.
  */
-function parseDraft(raw: string): Nullable<number> {
-  const trimmed = raw.trim()
-
-  if (trimmed === '') {
-    return null
-  }
-
-  const parsed = Number(trimmed)
-
-  if (Number.isNaN(parsed)) {
-    return null
-  }
-
-  return Math.round(parsed)
-}
-
-function clamp(value: number, range: NumberRange): number {
-  return Math.min(Math.max(value, range.min), range.max)
+function createDraftSchema(range: NumberRange) {
+  return z
+    .string()
+    .trim()
+    .transform((raw) => (raw === '' ? null : Math.round(Number(raw))))
+    .pipe(z.number().int().nullable())
+    .catch(null)
+    .transform((value) => (isNullish(value) ? null : clamp(value, range)))
 }
 
 /**
@@ -56,7 +57,8 @@ export function FilterRange({
   value,
   range,
   onChange,
-  close,
+  onClose,
+  onApply,
 }: FilterRangeProps) {
   // id полей нужны, чтобы подписи остались связаны с инпутами: разметка
   // на grid, и `label` больше не может быть внешним элементом для input
@@ -71,24 +73,21 @@ export function FilterRange({
     isNullish(value.max) ? '' : String(value.max),
   )
 
-  const handleMinChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => setDraftMin(event.target.value),
-    [],
-  )
+  const handleMinChange = (event: ChangeEvent<HTMLInputElement>) =>
+    setDraftMin(event.target.value)
 
-  const handleMaxChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => setDraftMax(event.target.value),
-    [],
-  )
+  const handleMaxChange = (event: ChangeEvent<HTMLInputElement>) =>
+    setDraftMax(event.target.value)
 
-  const handleApply = useCallback(() => {
-    const parsedMin = parseDraft(draftMin)
-    const parsedMax = parseDraft(draftMax)
+  const handleApply = () => {
+    const draftSchema = createDraftSchema(range)
+    const parsedMin = draftSchema.parse(draftMin)
+    const parsedMax = draftSchema.parse(draftMax)
 
     // Оба значения есть и порядок перепутан — меняем местами вместо отказа:
     // пользователь видит результат своего ввода, а не молча сброшенный
     const isReversed =
-      !isNullish(parsedMin) && !isNullish(parsedMax) && parsedMin > parsedMax
+      isDefined(parsedMin) && isDefined(parsedMax) && parsedMin > parsedMax
 
     onChange(
       isReversed
@@ -99,8 +98,9 @@ export function FilterRange({
           },
     )
 
-    close()
-  }, [draftMin, draftMax, range, onChange, close])
+    onApply?.()
+    onClose()
+  }
 
   return (
     <div className="filter-range">

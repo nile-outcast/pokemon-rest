@@ -101,6 +101,26 @@ export const createLoadingStageModel: SubModelCreator<LoadingStageModel> = (
     return getData().loadStatus
   }
 
+  const loading: LoadingStageModel['loading'] = () =>
+    setModel({
+      loadStatus: 'loading',
+      errorMessage: null,
+    })
+
+  const success: LoadingStageModel['success'] = () =>
+    setModel({
+      loadStatus: 'success',
+      errorMessage: null,
+    })
+
+  const error: LoadingStageModel['error'] = (message) =>
+    setModel({
+      loadStatus: 'error',
+      errorMessage: message ?? null,
+    })
+
+  const reset: LoadingStageModel['reset'] = () => setModel(INITIAL_DATA)
+
   // Обычная функция-конструктор, а не стрелочная: вызывается из setModel
   // раньше своего объявления (hoisting), поэтому здесь нужен hoisted вид.
   function makeModel(data: LoadingStageData): LoadingStageModel {
@@ -125,25 +145,10 @@ export const createLoadingStageModel: SubModelCreator<LoadingStageModel> = (
         return status === 'success' || status === 'error'
       },
 
-      loading: () =>
-        setModel({
-          loadStatus: 'loading',
-          errorMessage: null,
-        }),
-
-      success: () =>
-        setModel({
-          loadStatus: 'success',
-          errorMessage: null,
-        }),
-
-      error: (message) =>
-        setModel({
-          loadStatus: 'error',
-          errorMessage: message ?? null,
-        }),
-
-      reset: () => setModel(INITIAL_DATA),
+      loading,
+      success,
+      error,
+      reset,
     }
   }
 

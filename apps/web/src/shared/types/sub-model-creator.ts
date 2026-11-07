@@ -8,6 +8,11 @@ export type SubModelPath<Store, SubModel> = {
 }[keyof Store]
 
 /**
+ * Конфиг под-модели добавляется в конце аргументов, если для него был передан тип.
+ */
+type SubModelArgs<Config> = [Config] extends [undefined] ? [] : [config: Config]
+
+/**
  * Сигнатура фабрики вложенной под-модели для Zustand-стора.
  *
  * В отличие от `SliceCreator`, который типизирован по собственному срезу
@@ -27,5 +32,5 @@ export type SubModelCreator<SubModel, Config = undefined> = <Store>(
   set: SetState<Store>,
   get: GetState<Store>,
   path: SubModelPath<Store, SubModel>,
-  config?: Config,
+  ...args: SubModelArgs<Config>
 ) => SubModel

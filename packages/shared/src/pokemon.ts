@@ -25,8 +25,12 @@ export type PokemonListItem = z.infer<typeof pokemonListItemSchema>
 /** Query-параметры списка. Числа приходят строками, поэтому z.coerce */
 export const pokemonListQuerySchema = z.object({
   search: z.string().trim().min(1).optional(),
-  // Фильтр по имени типа (electric, fire, ...)
-  type: z.string().trim().min(1).optional(),
+  types: z
+    .preprocess(
+      (value) => (Array.isArray(value) ? value : [value]),
+      z.array(z.coerce.number().int()),
+    )
+    .default([]),
   attackMin: z.coerce.number().int().min(0).optional(),
   attackMax: z.coerce.number().int().min(0).optional(),
   experienceMin: z.coerce.number().int().min(0).optional(),

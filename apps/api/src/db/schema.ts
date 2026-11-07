@@ -9,7 +9,7 @@ import {
 } from 'drizzle-orm/pg-core'
 
 /** Основная таблица покемонов */
-export const pokemon = pgTable(
+export const pokemonTable = pgTable(
   'pokemon',
   {
     id: integer('id').primaryKey(),
@@ -27,7 +27,7 @@ export const pokemon = pgTable(
 )
 
 /** Справочник типов (electric, fire, ...) */
-export const types = pgTable(
+export const typesTable = pgTable(
   'types',
   {
     id: integer('id').primaryKey(),
@@ -37,14 +37,14 @@ export const types = pgTable(
 )
 
 /** Связь покемон-тип (slot определяет порядок на карточке) */
-export const pokemonTypes = pgTable(
+export const pokemonTypesTable = pgTable(
   'pokemon_types',
   {
     pokemonId: integer('pokemon_id')
-      .references(() => pokemon.id)
+      .references(() => pokemonTable.id)
       .notNull(),
     typeId: integer('type_id')
-      .references(() => types.id)
+      .references(() => typesTable.id)
       .notNull(),
     slot: smallint('slot').notNull(),
   },

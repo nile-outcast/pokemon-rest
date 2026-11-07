@@ -89,7 +89,7 @@ export const createPaginationModel: SubModelCreator<
   PaginationModel,
   PaginationConfig
 > = (set, get, path, config) => {
-  const limit = config?.limit ?? DEFAULT_LIMIT
+  const limit = config.limit ?? DEFAULT_LIMIT
 
   const getData = (): PaginationData => {
     return get()[path] as PaginationData
@@ -98,6 +98,53 @@ export const createPaginationModel: SubModelCreator<
   const setModel = (data: PaginationData) => {
     setSubModel(set, path, makeModel(data))
   }
+
+  // Геттер, вычисляемый из стора при каждом вызове.
+  // Вынесен наружу, чтобы не дублировать вычисление в `next` и `isLastPage`.
+  const getHasMore = () => {
+    const current = getData()
+
+    return current.offset + limit < current.total
+  }
+
+  const setPage: PaginationModel['setPage'] = (pageNumber) => {
+    if (pageNumber < 1) return
+
+    setModel({
+      ...getData(),
+      offset: (pageNumber - 1) * limit,
+    })
+  }
+
+  const next: PaginationModel['next'] = () => {
+    const current = getData()
+
+    if (!getHasMore()) return
+
+    setModel({
+      ...current,
+      offset: current.offset + limit,
+    })
+  }
+
+  const previous: PaginationModel['previous'] = () => {
+    const current = getData()
+
+    if (current.offset <= 0) return
+
+    setModel({
+      ...current,
+      offset: Math.max(0, current.offset - limit),
+    })
+  }
+
+  const setTotal: PaginationModel['setTotal'] = (total) =>
+    setModel({
+      ...getData(),
+      total,
+    })
+
+  const reset: PaginationModel['reset'] = () => setModel(INITIAL_DATA)
 
   // Обычная функция-конструктор, а не стрелочная: вызывается из setModel
   // раньше своего объявления (hoisting), поэтому здесь нужен hoisted вид.
@@ -123,53 +170,12 @@ export const createPaginationModel: SubModelCreator<
         return !getHasMore()
       },
 
-      setPage: (pageNumber) => {
-        if (pageNumber < 1) return
-
-        setModel({
-          ...getData(),
-          offset: (pageNumber - 1) * limit,
-        })
-      },
-
-      next: () => {
-        const current = getData()
-
-        if (!getHasMore()) return
-
-        setModel({
-          ...current,
-          offset: current.offset + limit,
-        })
-      },
-
-      previous: () => {
-        const current = getData()
-
-        if (current.offset <= 0) return
-
-        setModel({
-          ...current,
-          offset: Math.max(0, current.offset - limit),
-        })
-      },
-
-      setTotal: (total) =>
-        setModel({
-          ...getData(),
-          total,
-        }),
-
-      reset: () => setModel(INITIAL_DATA),
+      setPage,
+      next,
+      previous,
+      setTotal,
+      reset,
     }
-  }
-
-  // Геттер, вычисляемый из стора при каждом вызове.
-  // Вынесен наружу, чтобы не дублировать вычисление в `next` и `isLastPage`.
-  function getHasMore() {
-    const current = getData()
-
-    return current.offset + limit < current.total
   }
 
   return makeModel(INITIAL_DATA)

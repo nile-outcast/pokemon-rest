@@ -7,7 +7,7 @@ import { and, count, eq, gte, ilike, inArray, lte, SQL, sql } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
 import { db } from '../db/client'
-import { pokemon, pokemonTypes, types } from '../db/schema'
+import { pokemonTable, pokemonTypesTable, typesTable } from '../db/schema'
 
 /**
  * Собирает условия WHERE из query-параметров.
@@ -23,23 +23,23 @@ function buildConditions(query: {
   const conditions: Array<SQL> = []
 
   if (query.search) {
-    conditions.push(ilike(pokemon.name, `%${query.search}%`))
+    conditions.push(ilike(pokemonTable.name, `%${query.search}%`))
   }
 
   if (query.attackMin !== undefined) {
-    conditions.push(gte(pokemon.attack, query.attackMin))
+    conditions.push(gte(pokemonTable.attack, query.attackMin))
   }
 
   if (query.attackMax !== undefined) {
-    conditions.push(lte(pokemon.attack, query.attackMax))
+    conditions.push(lte(pokemonTable.attack, query.attackMax))
   }
 
   if (query.experienceMin !== undefined) {
-    conditions.push(gte(pokemon.baseExperience, query.experienceMin))
+    conditions.push(gte(pokemonTable.baseExperience, query.experienceMin))
   }
 
   if (query.experienceMax !== undefined) {
-    conditions.push(lte(pokemon.baseExperience, query.experienceMax))
+    conditions.push(lte(pokemonTable.baseExperience, query.experienceMax))
   }
 
   return conditions
@@ -58,7 +58,7 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       const {
         search,
-        type,
+        types,
         attackMin,
         attackMax,
         experienceMin,
@@ -76,16 +76,15 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
       })
 
       // Тип-фильтр через подзапрос: не нужен join для count
-      if (type) {
+      if (types.length > 0) {
         const typeIds = await db
-          .select({ id: pokemonTypes.pokemonId })
-          .from(pokemonTypes)
-          .innerJoin(types, eq(pokemonTypes.typeId, types.id))
-          .where(eq(types.name, type))
+          .select({ id: pokemonTypesTable.pokemonId })
+          .from(pokemonTypesTable)
+          .where(inArray(pokemonTypesTable.typeId, types))
 
         conditions.push(
           inArray(
-            pokemon.id,
+            pokemonTable.id,
             typeIds.map((r) => r.id),
           ),
         )
@@ -96,22 +95,22 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
       // Общее количество для hasMore
       const [countResult] = await db
         .select({ count: count() })
-        .from(pokemon)
+        .from(pokemonTable)
         .where(whereClause)
 
       // Элементы текущей страницы
       const items = await db
         .select({
-          id: pokemon.id,
-          name: pokemon.name,
-          attack: pokemon.attack,
-          defense: pokemon.defense,
-          baseExperience: pokemon.baseExperience,
-          spriteUrl: pokemon.spriteUrl,
+          id: pokemonTable.id,
+          name: pokemonTable.name,
+          attack: pokemonTable.attack,
+          defense: pokemonTable.defense,
+          baseExperience: pokemonTable.baseExperience,
+          spriteUrl: pokemonTable.spriteUrl,
         })
-        .from(pokemon)
+        .from(pokemonTable)
         .where(whereClause)
-        .orderBy(pokemon.id)
+        .orderBy(pokemonTable.id)
         .limit(limit)
         .offset(offset)
 
@@ -121,14 +120,17 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
         itemIds.length > 0
           ? await db
               .select({
-                pokemonId: pokemonTypes.pokemonId,
-                name: types.name,
-                slot: pokemonTypes.slot,
+                pokemonId: pokemonTypesTable.pokemonId,
+                name: typesTable.name,
+                slot: pokemonTypesTable.slot,
               })
-              .from(pokemonTypes)
-              .innerJoin(types, eq(pokemonTypes.typeId, types.id))
-              .where(inArray(pokemonTypes.pokemonId, itemIds))
-              .orderBy(pokemonTypes.pokemonId, pokemonTypes.slot)
+              .from(pokemonTypesTable)
+              .innerJoin(
+                typesTable,
+                eq(pokemonTypesTable.typeId, typesTable.id),
+              )
+              .where(inArray(pokemonTypesTable.pokemonId, itemIds))
+              .orderBy(pokemonTypesTable.pokemonId, pokemonTypesTable.slot)
           : []
 
       // Собираем map pokemon_id → string[]
@@ -164,21 +166,21 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
     async () => {
       const [typeList, attackRange, expRange] = await Promise.all([
         db
-          .select({ id: types.id, name: types.name })
-          .from(types)
-          .orderBy(types.name),
+          .select({ id: typesTable.id, name: typesTable.name })
+          .from(typesTable)
+          .orderBy(typesTable.name),
         db
           .select({
             min: sql<number>`min(attack)::int`,
             max: sql<number>`max(attack)::int`,
           })
-          .from(pokemon),
+          .from(pokemonTable),
         db
           .select({
             min: sql<number>`min(base_experience)::int`,
             max: sql<number>`max(base_experience)::int`,
           })
-          .from(pokemon),
+          .from(pokemonTable),
       ])
 
       return {

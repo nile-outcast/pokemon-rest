@@ -1,9 +1,3 @@
-/*
- * Макет (фрейм 9:972): триггер 163×27 с подписью 12px и стрелкой 10×10,
- * панель 163×82. В проекте базовый шрифт 18px вместо 12px в макете,
- * поэтому высота триггера и внутренние отступы увеличены пропорционально,
- * а цвета взяты из существующих токенов.
- */
 .dropdown__trigger {
   /* Radix вешает data-state на триггер: стрелка разворачивается по нему */
   display: block;
@@ -14,7 +8,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  width: 163px;
+  width: 100%;
   padding: 8px 12px;
   font: 14px/145% var(--sans);
   letter-spacing: 0.14px;
@@ -44,7 +38,6 @@
   }
 
   @media (max-width: 1024px) {
-    width: 140px;
     padding: 6px 10px;
     font-size: 13px;
   }

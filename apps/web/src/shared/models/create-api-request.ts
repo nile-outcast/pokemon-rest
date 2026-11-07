@@ -1,10 +1,11 @@
+import queryString from 'query-string'
 import {
+  isDefined,
   isNullish,
   type BaseObject,
   type Nullable,
 } from 'typescript-extended-types'
 
-import { isEmptyQueryValue } from '@/shared/helpers/is-empty-query-value'
 import type {
   ApiCallArgs,
   ApiCallConfig,
@@ -24,26 +25,19 @@ function buildUrl(path: string, query?: BaseObject): string {
     return path
   }
 
-  const params = new URLSearchParams()
-
-  for (const [key, value] of Object.entries(query)) {
-    if (isEmptyQueryValue(value)) {
-      continue
-    }
-
-    params.append(key, String(value))
-  }
-
-  const queryString = params.toString()
+  const qs = queryString.stringify(query, {
+    skipNull: true,
+    skipEmptyString: true,
+  })
 
   // Все параметры оказались пустыми — не добавляем голый «?»
-  if (!queryString) {
+  if (!qs) {
     return path
   }
 
   const separator = path.includes('?') ? '&' : '?'
 
-  return `${path}${separator}${queryString}`
+  return `${path}${separator}${qs}`
 }
 
 async function safeParse<T>(response: Response): Promise<Nullable<T>> {
@@ -142,6 +136,6 @@ export function createApiRequest<D, E extends Error = Error>(
     },
 
     cancel: () => controller?.abort(),
-    isPending: () => !isNullish(controller),
+    isPending: () => isDefined(controller),
   }
 }

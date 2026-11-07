@@ -2,6 +2,7 @@ import type { PokemonListItem, PokemonListResponse } from '@pokemon-rest/shared'
 import { create } from 'zustand'
 
 import { POKEMON_API_BASE_URL } from '@/shared/config/pokemon-api'
+import { debounce, type DebouncedFn } from '@/shared/helpers/debounce'
 import { toErrorMessage } from '@/shared/helpers/to-error-message'
 import { writeQueryParams } from '@/shared/helpers/url-query'
 import { createApiRequest } from '@/shared/models/create-api-request'
@@ -26,12 +27,15 @@ interface PokemonState extends PokemonFiltersSlice {
   loadingMoreStage: LoadingStageModel
   fetchPokemonList: () => Promise<void>
   fetchNextPage: () => Promise<void>
+  debouncedFetchPokemonList: DebouncedFn<() => Promise<void>>
 }
 
 const pokemonListRequest = createApiRequest<PokemonListResponse, Error>(
   `/pokemon`,
   { baseUrl: POKEMON_API_BASE_URL },
 )
+
+const DEBOUNCE_MS = 300
 
 /**
  * Идентификатор последнего запроса списка.
@@ -73,7 +77,8 @@ export const usePokemonStore = create<PokemonState>()((set, get) => ({
 
     const result = await pokemonListRequest.call({
       query: {
-        ...get().pagination,
+        limit: get().pagination.limit,
+        offset: 0,
         ...filters,
       },
     })
@@ -118,9 +123,12 @@ export const usePokemonStore = create<PokemonState>()((set, get) => ({
     // поэтому следующая страница уже сдвинута и запрашивается как текущая
     get().pagination.next()
 
+    const { limit, offset } = get().pagination
+
     const result = await pokemonListRequest.call({
       query: {
-        ...get().pagination,
+        limit,
+        offset,
         ...get().filters(),
       },
     })
@@ -147,4 +155,9 @@ export const usePokemonStore = create<PokemonState>()((set, get) => ({
     // Фиксируем total: от него зависит hasMore для следующего перехода
     get().pagination.setTotal(result.data.total)
   },
+
+  debouncedFetchPokemonList: debounce(
+    () => get().fetchPokemonList(),
+    DEBOUNCE_MS,
+  ),
 }))

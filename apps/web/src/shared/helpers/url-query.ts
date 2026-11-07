@@ -1,48 +1,47 @@
-import { type BaseObject, type Nullable } from 'typescript-extended-types'
+import queryString, {
+  type ParseOptions,
+  type StringifyOptions,
+} from 'query-string'
+import { type BaseObject } from 'typescript-extended-types'
+import type { ZodType } from 'zod'
 
-import { isEmptyQueryValue } from '@/shared/helpers/is-empty-query-value'
+export const QUERY_PARAMS_PARSE_OPTIONS: ParseOptions = {
+  parseNumbers: true,
+  parseBooleans: true,
+  arrayFormat: 'bracket',
+}
 
-/**
- * Читает значение query-параметра из адресной строки.
- *
- * Пустое значение (`?search=`) возвращается как `null`, чтобы вызывающий
- * код различал «параметра нет» и «параметр пустой» одной проверкой.
- */
-export function readQueryParam(name: string): Nullable<string> {
-  const value = new URLSearchParams(window.location.search).get(name)
-
-  if (isEmptyQueryValue(value)) {
-    return null
-  }
-
-  return value
+export const QUERY_PARAMS_STRINGIFY_OPTIONS: StringifyOptions = {
+  skipNull: true,
+  skipEmptyString: true,
+  arrayFormat: 'bracket',
 }
 
 /**
- * Записывает query-параметры в адресную строку, сохраняя чужие параметры.
- *
- * Пустое значение удаляет параметр — адрес остаётся чистым при
- * сброшенном фильтре.
+ * Читает значение query-параметра из адресной строки
+ * и валидирует по переданной схеме
+ */
+export function readQueryParams<T>(schema: ZodType<T>): Partial<T> {
+  const parsed = queryString.parse(
+    window.location.search,
+    QUERY_PARAMS_PARSE_OPTIONS,
+  )
+
+  const result = schema.safeParse(parsed)
+
+  return result.success ? result.data : {}
+}
+
+/**
+ * Записывает query-параметры в адресную строку
  *
  * Используется `replaceState`, а не `pushState`: каждое изменение
  * фильтра не должно плодить запись в истории, иначе кнопка «назад»
  * начинает листать состояния поиска вместо перехода между страницами.
  */
 export function writeQueryParams(params: BaseObject): void {
-  const search = new URLSearchParams(window.location.search)
-
-  for (const [key, value] of Object.entries(params)) {
-    if (isEmptyQueryValue(value)) {
-      search.delete(key)
-
-      continue
-    }
-
-    search.set(key, String(value))
-  }
-
-  const queryString = search.toString()
-  const path = `${window.location.pathname}${queryString ? `?${queryString}` : ''}`
+  const query = queryString.stringify(params, QUERY_PARAMS_STRINGIFY_OPTIONS)
+  const path = `${window.location.pathname}${query ? `?${query}` : ''}`
 
   window.history.replaceState(
     window.history.state,
