@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { isNullish } from 'typescript-extended-types'
 import { useShallow } from 'zustand/shallow'
 
 import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
@@ -6,6 +7,7 @@ import { FILTER_LABEL } from '@/features/pokemon-filters/config/filter-presets'
 import { Dropdown } from '@/shared/ui/dropdown/Dropdown'
 import { FilterMultiSelect } from '@/shared/ui/filter-multi-select/FilterMultiSelect'
 import { FilterRange } from '@/shared/ui/filter-range/FilterRange'
+import { LoadStatus } from '@/shared/ui/load-status/LoadStatus'
 
 import './PokemonFilters.css'
 
@@ -19,9 +21,18 @@ import './PokemonFilters.css'
  * стора, а разметка останется без изменений.
  */
 export function PokemonFilters() {
-  const { filtersCatalog, types, attack, experience } = usePokemonStore(
+  const { filtersCatalog, isLoading, isError, loadErrorMessage } =
+    usePokemonStore(
+      useShallow((state) => ({
+        filtersCatalog: state.filtersCatalog,
+        isLoading: state.filtersLoadingStage.isLoading,
+        isError: state.filtersLoadingStage.isError,
+        loadErrorMessage: state.filtersLoadingStage.errorMessage,
+      })),
+    )
+
+  const { types, attack, experience } = usePokemonStore(
     useShallow((state) => ({
-      filtersCatalog: state.filtersCatalog,
       types: state.types.value,
       attack: state.attack.value,
       experience: state.experience.value,
@@ -29,9 +40,7 @@ export function PokemonFilters() {
   )
 
   const setTypes = usePokemonStore((state) => state.types.setValue)
-
   const setAttack = usePokemonStore((state) => state.attack.setValue)
-
   const setExperience = usePokemonStore((state) => state.experience.setValue)
 
   const fetchFiltersCatalog = usePokemonStore(
@@ -41,8 +50,6 @@ export function PokemonFilters() {
   const debouncedFetchList = usePokemonStore(
     (state) => state.debouncedFetchPokemonList,
   )
-
-  useEffect(() => debouncedFetchList.cancel, [debouncedFetchList])
 
   useEffect(() => {
     void fetchFiltersCatalog()
@@ -63,6 +70,24 @@ export function PokemonFilters() {
   const onApplyRange = () => {
     debouncedFetchList.cancel()
     void fetchPokemonList()
+  }
+
+  const isEmptyCatalog = isNullish(filtersCatalog)
+
+  if (isLoading || isError || isEmptyCatalog) {
+    return (
+      <div className="pokemon-filters">
+        <LoadStatus
+          isLoading={isLoading}
+          isError={isError}
+          isEmpty={isEmptyCatalog}
+          loadMessage="Загрузка фильтров..."
+          errorMessage={`Не удалось загрузить фильтры${loadErrorMessage && `: ${loadErrorMessage}`}`}
+          emptyMessage="Фильтра не найдены"
+          retry={fetchFiltersCatalog}
+        />
+      </div>
+    )
   }
 
   return (

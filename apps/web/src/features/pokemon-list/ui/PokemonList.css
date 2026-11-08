@@ -71,31 +71,3 @@
   background: var(--accent-bg);
   color: var(--text-h);
 }
-
-.pokemon-list__error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  color: var(--text);
-}
-
-.pokemon-list__retry {
-  font-size: 14px;
-  padding: 6px 14px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: border-color 0.3s;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-}

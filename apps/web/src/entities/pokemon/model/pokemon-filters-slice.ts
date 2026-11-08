@@ -3,6 +3,7 @@ import {
   type PokemonFiltersResponse,
   type PokemonListQuery,
 } from '@pokemon-rest/shared'
+import type { Nullable } from 'typescript-extended-types'
 
 import { POKEMON_API_BASE_URL } from '@/shared/config/pokemon-api'
 import { toErrorMessage } from '@/shared/helpers/to-error-message'
@@ -29,7 +30,7 @@ export interface PokemonFiltersSlice {
 
   readonly filters: () => PokemonFilters
 
-  filtersCatalog: PokemonFiltersResponse
+  filtersCatalog: Nullable<PokemonFiltersResponse>
   filtersLoadingStage: LoadingStageModel
   fetchFiltersCatalog: () => Promise<void>
 }
@@ -38,18 +39,6 @@ const filtersRequest = createApiRequest<PokemonFiltersResponse, Error>(
   '/pokemon/filters',
   { baseUrl: POKEMON_API_BASE_URL },
 )
-
-const INITIAL_FILTERS_CATALOG: PokemonFiltersResponse = {
-  types: [],
-  attack: {
-    min: 0,
-    max: 0,
-  },
-  experience: {
-    min: 0,
-    max: 0,
-  },
-}
 
 export const createPokemonFiltersSlice: SliceCreator<PokemonFiltersSlice> = (
   set,
@@ -93,7 +82,7 @@ export const createPokemonFiltersSlice: SliceCreator<PokemonFiltersSlice> = (
       }
     },
 
-    filtersCatalog: INITIAL_FILTERS_CATALOG,
+    filtersCatalog: null,
     filtersLoadingStage: createLoadingStageModel(
       set,
       get,

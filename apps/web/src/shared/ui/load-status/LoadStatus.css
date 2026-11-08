@@ -1,0 +1,13 @@
+.load-status__status {
+  font-family: var(--mono);
+  color: var(--text);
+  margin: 0;
+}
+
+.load-status__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+}

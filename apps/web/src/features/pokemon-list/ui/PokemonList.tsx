@@ -1,21 +1,30 @@
 import { useEffect } from 'react'
+import { useShallow } from 'zustand/shallow'
 
 import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
 import { useIntersectionObserver } from '@/shared/hooks/use-intersection-observer'
+import { Button } from '@/shared/ui/button/Button'
+import { LoadStatus } from '@/shared/ui/load-status/LoadStatus'
 
 import './PokemonList.css'
 
 export function PokemonList() {
-  const isLoading = usePokemonStore((state) => state.loadingStage.isLoading)
-  const loadErrorMessage = usePokemonStore(
-    (state) => state.loadingStage.errorMessage,
+  const { isLoading, isError, loadErrorMessage } = usePokemonStore(
+    useShallow((state) => ({
+      isLoading: state.loadingStage.isLoading,
+      isError: state.loadingStage.isError,
+      loadErrorMessage: state.loadingStage.errorMessage,
+    })),
   )
-  const isLoadingMore = usePokemonStore(
-    (state) => state.loadingMoreStage.isLoading,
+
+  const { isLoadingMore, isErrorMore, loadMoreErrorMessage } = usePokemonStore(
+    useShallow((state) => ({
+      isLoadingMore: state.loadingMoreStage.isLoading,
+      isErrorMore: state.loadingMoreStage.isError,
+      loadMoreErrorMessage: state.loadingMoreStage.errorMessage,
+    })),
   )
-  const loadMoreErrorMessage = usePokemonStore(
-    (state) => state.loadingMoreStage.errorMessage,
-  )
+
   const items = usePokemonStore((state) => state.items)
   const fetchPokemonList = usePokemonStore((state) => state.fetchPokemonList)
   const fetchNextPage = usePokemonStore((state) => state.fetchNextPage)
@@ -29,35 +38,20 @@ export function PokemonList() {
     isLoading: isLoading || isLoadingMore,
   })
 
-  if (items.length === 0) {
-    if (isLoading) {
-      return (
-        <div className="pokemon-list__centered">
-          <p className="pokemon-list__status">Загрузка покемонов…</p>
-        </div>
-      )
-    }
+  const isEmptyList = items.length === 0
 
-    if (loadErrorMessage) {
-      return (
-        <div className="pokemon-list__centered">
-          <div className="pokemon-list__error">
-            <p>Не удалось загрузить покемонов: {loadErrorMessage}</p>
-            <button
-              type="button"
-              className="pokemon-list__retry"
-              onClick={() => void fetchPokemonList()}
-            >
-              Повторить
-            </button>
-          </div>
-        </div>
-      )
-    }
-
+  if (isEmptyList && (isLoading || isError)) {
     return (
       <div className="pokemon-list__centered">
-        <p className="pokemon-list__status">Покемоны не найдены</p>
+        <LoadStatus
+          isLoading={isLoading}
+          isError={isError}
+          isEmpty={isEmptyList}
+          loadMessage="Загрузка покемонов..."
+          errorMessage={`Не удалось загрузить покемонов${loadErrorMessage && `: ${loadErrorMessage}`}`}
+          emptyMessage="Покемоны не найдены"
+          retry={fetchPokemonList}
+        />
       </div>
     )
   }
@@ -73,18 +67,13 @@ export function PokemonList() {
         </li>
       ))}
 
-      {loadMoreErrorMessage ? (
+      {isErrorMore ? (
         <li className="pokemon-list__more-error">
           <p className="pokemon-list__status">
-            Не удалось догрузить: {loadMoreErrorMessage}
+            Не удалось догрузить покемонов
+            {loadMoreErrorMessage && `: ${loadMoreErrorMessage}`}
           </p>
-          <button
-            type="button"
-            className="pokemon-list__retry"
-            onClick={() => void fetchNextPage()}
-          >
-            Дозагрузить
-          </button>
+          <Button onClick={fetchNextPage}>Дозагрузить</Button>
         </li>
       ) : (
         <li ref={setSentinelRef} className="pokemon-list__sentinel" />

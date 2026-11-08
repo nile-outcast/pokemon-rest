@@ -1,5 +1,4 @@
 import type { ChangeEvent, KeyboardEvent } from 'react'
-import { useEffect } from 'react'
 
 import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
 
@@ -17,9 +16,6 @@ export function PokemonSearch() {
   const debouncedFetchList = usePokemonStore(
     (state) => state.debouncedFetchPokemonList,
   )
-
-  // Отменяем отложенный вызов при размонтировании
-  useEffect(() => debouncedFetchList.cancel, [debouncedFetchList])
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value.replace(FORBIDDEN_INPUT_RE, '')
