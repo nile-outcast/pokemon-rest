@@ -31,13 +31,14 @@ PostgreSQL 16 запустится на порту `5432` с volume для да�
 npm run dev:api
 ```
 
-Fastify запустится на `127.0.0.1:3000`. Swagger UI доступен на `/docs`.
+Fastify запустится на `127.0.0.1:3003`. Swagger UI доступен на `/docs`.
 
 ### 3. Обкачка данных
 
 ```bash
 npm run seed --workspace @pokemon-rest/api -- --limit=20   # первые 20
-npm run seed --workspace @pokemon-rest/api                  # все (~1350)
+npm run seed --workspace @pokemon-rest/api                 # все (~1350)
+npm run seed                                               # все (~1350)
 ```
 
 Сидер идемпотентен — повторный запуск без `--limit` пересоберёт данные из PokeAPI.
@@ -87,7 +88,7 @@ Vite запустится на `localhost:5173`. Запросы к `/api/*` пр
 |-------------------------------------|-----------------------------------|
 | `npm run dev:web`                   | фронтенд                          |
 | `npm run dev:api`                   | API-сервер                        |
-| `npm run seed`                      | сидер (нужен workspace flag)      |
+| `npm run seed`                      | сидер                             |
 | `npm run build`                     | сборка всех workspace             |
 | `npm run lint` / `npm run lint:fix` | ESLint                            |
 | `npm run ts-check`                  | `tsc -b --force`                  |

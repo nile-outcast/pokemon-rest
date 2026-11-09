@@ -2,6 +2,7 @@ import {
   pokemonFiltersResponseSchema,
   pokemonListQuerySchema,
   pokemonListResponseSchema,
+  type PokemonType,
 } from '@pokemon-rest/shared'
 import { and, count, eq, gte, ilike, inArray, lte, SQL, sql } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
@@ -105,8 +106,8 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
           name: pokemonTable.name,
           attack: pokemonTable.attack,
           defense: pokemonTable.defense,
-          baseExperience: pokemonTable.baseExperience,
           spriteUrl: pokemonTable.spriteUrl,
+          color: pokemonTable.color,
         })
         .from(pokemonTable)
         .where(whereClause)
@@ -122,6 +123,7 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
               .select({
                 pokemonId: pokemonTypesTable.pokemonId,
                 name: typesTable.name,
+                color: typesTable.color,
                 slot: pokemonTypesTable.slot,
               })
               .from(pokemonTypesTable)
@@ -133,16 +135,21 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
               .orderBy(pokemonTypesTable.pokemonId, pokemonTypesTable.slot)
           : []
 
-      // Собираем map pokemon_id → string[]
-      const typesMap = new Map<number, Array<string>>()
+      // Собираем map pokemon_id → PokemonType[]
+      const typesMap = new Map<number, Array<PokemonType>>()
 
       for (const row of typeRows) {
         const arr = typesMap.get(row.pokemonId)
 
+        const pokemonType: PokemonType = {
+          name: row.name,
+          color: row.color,
+        }
+
         if (arr) {
-          arr.push(row.name)
+          arr.push(pokemonType)
         } else {
-          typesMap.set(row.pokemonId, [row.name])
+          typesMap.set(row.pokemonId, [pokemonType])
         }
       }
 
@@ -151,7 +158,10 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
         types: typesMap.get(item.id) ?? [],
       }))
 
-      return { items: responseItems, total: Number(countResult.count) }
+      return {
+        items: responseItems,
+        total: Number(countResult.count),
+      }
     },
   )
 

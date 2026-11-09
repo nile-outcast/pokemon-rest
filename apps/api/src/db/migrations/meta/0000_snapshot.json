@@ -144,12 +144,8 @@
           "name": "pokemon_types_pokemon_id_pokemon_id_fk",
           "tableFrom": "pokemon_types",
           "tableTo": "pokemon",
-          "columnsFrom": [
-            "pokemon_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pokemon_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -157,12 +153,8 @@
           "name": "pokemon_types_type_id_types_id_fk",
           "tableFrom": "pokemon_types",
           "tableTo": "types",
-          "columnsFrom": [
-            "type_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["type_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -170,10 +162,7 @@
       "compositePrimaryKeys": {
         "pokemon_types_pokemon_id_slot_pk": {
           "name": "pokemon_types_pokemon_id_slot_pk",
-          "columns": [
-            "pokemon_id",
-            "slot"
-          ]
+          "columns": ["pokemon_id", "slot"]
         }
       },
       "uniqueConstraints": {},

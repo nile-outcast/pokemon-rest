@@ -11,7 +11,7 @@ loadEnv({ path: resolve(repoRoot, '.env') })
 
 const envSchema = z.object({
   HOST: z.string().min(1).default('127.0.0.1'),
-  PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  PORT: z.coerce.number().int().min(1).max(65535).default(3003),
   DATABASE_URL: z.string().min(1),
   POKEAPI_BASE_URL: z.url().default('https://pokeapi.co/api/v2'),
 })

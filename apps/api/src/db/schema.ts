@@ -18,6 +18,8 @@ export const pokemonTable = pgTable(
     defense: smallint('defense').notNull(),
     baseExperience: smallint('base_experience').notNull(),
     spriteUrl: text('sprite_url'),
+    // Цвет вида — из pokemon-species.color (10 цветов вида)
+    color: text('color').notNull(),
   },
   (table) => [
     uniqueIndex('pokemon_name_unique').on(table.name),
@@ -32,6 +34,7 @@ export const typesTable = pgTable(
   {
     id: integer('id').primaryKey(),
     name: text('name').notNull(),
+    color: text('color').notNull(),
   },
   (table) => [uniqueIndex('types_name_unique').on(table.name)],
 )

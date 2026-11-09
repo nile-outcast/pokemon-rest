@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useShallow } from 'zustand/shallow'
 
 import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
+import { PokemonCard } from '@/features/pokemon-card'
 import { useIntersectionObserver } from '@/shared/hooks/use-intersection-observer'
 import { Button } from '@/shared/ui/button/Button'
 import { LoadStatus } from '@/shared/ui/load-status/LoadStatus'
@@ -59,12 +60,7 @@ export function PokemonList() {
   return (
     <ul className="pokemon-list">
       {items.map((pokemon) => (
-        <li key={pokemon.id} className="pokemon-list__item">
-          <span className="pokemon-list__id">
-            #{String(pokemon.id).padStart(3, '0')}
-          </span>
-          <span className="pokemon-list__name">{pokemon.name}</span>
-        </li>
+        <PokemonCard key={pokemon.id} pokemon={pokemon} />
       ))}
 
       {isErrorMore ? (

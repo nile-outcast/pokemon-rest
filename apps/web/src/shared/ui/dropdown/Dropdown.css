@@ -12,7 +12,7 @@
   padding: 8px 12px;
   font: 14px/145% var(--sans);
   letter-spacing: 0.14px;
-  color: var(--text-h);
+  color: var(--text-prime);
   background: var(--code-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -54,8 +54,8 @@
   flex-shrink: 0;
   width: 7px;
   height: 7px;
-  border-right: 1.5px solid var(--text);
-  border-bottom: 1.5px solid var(--text);
+  border-right: 1.5px solid var(--text-prime);
+  border-bottom: 1.5px solid var(--text-prime);
   transform: translateY(-2px) rotate(45deg);
   transition: transform 0.15s;
 

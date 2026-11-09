@@ -8,16 +8,25 @@ import { z } from 'zod'
  * а здесь типы генерирует zod, поэтому в исходнике нет ни `T[]`, ни `T | null`.
  */
 
+/** Тип покемона с цветом для карточки */
+export const pokemonTypeSchema = z.object({
+  name: z.string(),
+  color: z.string(),
+})
+
+export type PokemonType = z.infer<typeof pokemonTypeSchema>
+
 /** Элемент списка покемонов — всё, что нужно для карточки */
 export const pokemonListItemSchema = z.object({
   id: z.number().int().positive(),
   name: z.string(),
   attack: z.number().int(),
   defense: z.number().int(),
-  baseExperience: z.number().int(),
   // Официальный артворк может отсутствовать у отдельных форм
   spriteUrl: z.string().nullable(),
-  types: z.array(z.string()),
+  // Hex-значение цвета вида покемона — из pokemon-species.color (видовое тело)
+  color: z.string(),
+  types: z.array(pokemonTypeSchema),
 })
 
 export type PokemonListItem = z.infer<typeof pokemonListItemSchema>

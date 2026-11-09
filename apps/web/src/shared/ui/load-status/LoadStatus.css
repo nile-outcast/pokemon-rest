@@ -1,6 +1,6 @@
 .load-status__status {
   font-family: var(--mono);
-  color: var(--text);
+  color: var(--text-prime);
   margin: 0;
 }
 
@@ -9,5 +9,5 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  color: var(--text);
+  color: var(--text-prime);
 }

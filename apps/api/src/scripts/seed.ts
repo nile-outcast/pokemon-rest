@@ -40,14 +40,16 @@ interface PokeEntry {
 
 interface PokeStat {
   base_stat: number
-  stat: {
-    name: string
-  }
+  stat: PokeEntry
 }
 
 interface PokeType {
   slot: number
   type: PokeEntry
+}
+
+interface PokeSpecies {
+  color: PokeEntry
 }
 
 interface PokeSprite {
@@ -66,6 +68,7 @@ interface PokePokemon {
   stats: Array<PokeStat>
   types: Array<PokeType>
   sprites: PokeSprite
+  species: PokeEntry
 }
 
 // ── утилиты ─────────────────────────────────────────────────────
@@ -136,29 +139,65 @@ function parseArgs(): { limit: number } {
   return { limit }
 }
 
-/** Извлекает id из URL вида https://pokeapi.co/api/v2/pokemon/1/ */
-function extractPokemonId(url: string): number {
-  const match = url.match(/\/pokemon\/(\d+)\/$/)
+/** Извлекает id из URL вида https://pokeapi.co/api/v2/{path}/1/ */
+function extractId(url: string, path: string): number {
+  const regexp = new RegExp(`/${path}/(\\d+)/$`)
+  const match = url.match(regexp)
 
   if (!match) {
-    throw new Error(`Cannot extract id from url: ${url}`)
-  }
-
-  return Number(match[1])
-}
-
-/** Извлекает id типа из URL вида https://pokeapi.co/api/v2/type/12/ */
-function extractTypeId(url: string): number {
-  const match = url.match(/\/type\/(\d+)\/$/)
-
-  if (!match) {
-    throw new Error(`Cannot extract type id from url: ${url}`)
+    throw new Error(`Cannot extract ${path} id from url: ${url}`)
   }
 
   return Number(match[1])
 }
 
 // ── основной поток ────────────────────────────────────────────────
+
+/**
+ * Палитра типов — hex-цвета из официального гайда Bulbapedia.
+ *
+ * PokeAPI не отдаёт цвет типа, только имя, поэтому справочник держим
+ * локально и записываем в колонку types.color при сиде.
+ */
+const TYPE_COLORS: Record<string, string> = {
+  normal: '#A8A77A',
+  fire: '#EE8130',
+  water: '#6390F0',
+  electric: '#F7D02C',
+  grass: '#7AC74C',
+  ice: '#96D9D6',
+  fighting: '#C22E28',
+  poison: '#A33EA1',
+  ground: '#E2BF65',
+  flying: '#A98FF3',
+  psychic: '#F95587',
+  bug: '#A6B91A',
+  rock: '#B6A136',
+  ghost: '#735797',
+  dragon: '#6F35FC',
+  dark: '#705746',
+  steel: '#B7B7CE',
+  fairy: '#D685AA',
+}
+
+/**
+ * Палитра видов — фон под артворком на карточке.
+ *
+ * PokeAPI отдаёт цвет вида только именем (10 вариантов), hex-значения
+ * берём из палитры Veekun и мапим при сиде в pokemon.color.
+ */
+const SPECIES_COLORS: Record<string, string> = {
+  black: '#464646',
+  blue: '#6890F0',
+  brown: '#AC6E4A',
+  gray: '#989898',
+  green: '#7AC74C',
+  pink: '#F69CB4',
+  purple: '#9568C8',
+  red: '#EF3F37',
+  white: '#F8F8F8',
+  yellow: '#F8D030',
+}
 
 async function main() {
   const { limit } = parseArgs()
@@ -177,20 +216,43 @@ async function main() {
   )
   process.stderr.write(`\n📦 found ${entries.length} pokemon\n`)
 
-  // 2. Загрузить детали параллельно
-  const details = await concurrentMap(
+  // 2. Загрузить деталки покемонов параллельно
+  const detailList = await concurrentMap(
     entries,
     async (entry) =>
       fetchWithRetry<PokePokemon>(
         // entry.url - абсолютные ссылки на свой хост.
         // Используем склейку на случай если POKEAPI_BASE будет указывать на зеркало или локальный прокси
-        `${POKEAPI_BASE}/pokemon/${extractPokemonId(entry.url)}`,
+        `${POKEAPI_BASE}/pokemon/${extractId(entry.url, 'pokemon')}`,
       ),
     CONCURRENCY,
   )
 
-  // 3. Записать в БД
-  for (const detail of details) {
+  // 2b. Загрузить виды параллельно — для цвета вида
+  const speciesList = await concurrentMap(
+    detailList,
+    async (entry) =>
+      fetchWithRetry<PokeSpecies>(
+        `${POKEAPI_BASE}/pokemon-species/${extractId(entry.species.url, 'pokemon-species')}`,
+      ),
+    CONCURRENCY,
+  )
+
+  // 3. Обновить цвета типов — полный справочник по имени
+  const typeColorUpdates = Object.entries(TYPE_COLORS)
+
+  if (typeColorUpdates.length > 0) {
+    for (const [name, color] of typeColorUpdates) {
+      await db
+        .update(typesTable)
+        .set({ color })
+        .where(eq(typesTable.name, name))
+    }
+  }
+
+  // 4. Записать в БД
+  for (let i = 0; i < detailList.length; i++) {
+    const detail = detailList[i]
     // Извлекаем атаку и защиту по именам статов
     const attack =
       detail.stats.find((s) => s.stat.name === 'attack')?.base_stat ?? 0
@@ -202,13 +264,18 @@ async function main() {
       detail.sprites.front_default ??
       null
 
+    const species = speciesList[i]
+    // Hex-значение цвета вида покемона
+    const color = SPECIES_COLORS[species.color.name]
+
     // Справочник типов неизменяем: существующие записи не трогаем
     await db
       .insert(typesTable)
       .values(
         detail.types.map((t) => ({
-          id: extractTypeId(t.type.url),
+          id: extractId(t.type.url, 'type'),
           name: t.type.name,
+          color: TYPE_COLORS[t.type.name],
         })),
       )
       .onConflictDoNothing()
@@ -223,6 +290,7 @@ async function main() {
         defense,
         baseExperience: detail.base_experience ?? 0,
         spriteUrl,
+        color,
       })
       .onConflictDoUpdate({
         target: pokemonTable.id,
@@ -232,6 +300,7 @@ async function main() {
           defense,
           baseExperience: detail.base_experience ?? 0,
           spriteUrl,
+          color,
         },
       })
 
@@ -244,7 +313,7 @@ async function main() {
       await db.insert(pokemonTypesTable).values(
         detail.types.map((t) => ({
           pokemonId: detail.id,
-          typeId: extractTypeId(t.type.url),
+          typeId: extractId(t.type.url, 'type'),
           slot: t.slot,
         })),
       )
