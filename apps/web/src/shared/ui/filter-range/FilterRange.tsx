@@ -66,10 +66,10 @@ export function FilterRange({
   const minInputId = `${fieldId}-min`
   const maxInputId = `${fieldId}-max`
 
-  const [draftMin, setDraftMin] = useState(
+  const [draftMin, setDraftMin] = useState(() =>
     isNullish(value.min) ? '' : String(value.min),
   )
-  const [draftMax, setDraftMax] = useState(
+  const [draftMax, setDraftMax] = useState(() =>
     isNullish(value.max) ? '' : String(value.max),
   )
 

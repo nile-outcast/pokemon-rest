@@ -1,8 +1,8 @@
 // eslint.config.js — flat config для ESLint v10
+import eslintReact from '@eslint-react/eslint-plugin'
 import js from '@eslint/js'
 import importX from 'eslint-plugin-import-x'
 import prettier from 'eslint-plugin-prettier/recommended'
-import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 import globals from 'globals'
@@ -18,7 +18,6 @@ export default defineConfig(
       globals: globals.browser,
     },
     plugins: {
-      'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       'import-x': importX,
     },
@@ -30,7 +29,6 @@ export default defineConfig(
       },
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
@@ -124,6 +122,12 @@ export default defineConfig(
         },
       ],
     },
+  },
+  {
+    // React-правила (jsx-key, правила хуков, чистота рендера и т.д.)
+    // применяем только к фронтенду: в apps/api и packages/shared React нет
+    ...eslintReact.configs['recommended-typescript'],
+    files: ['apps/web/**/*.{ts,tsx}'],
   },
   prettier,
   {
