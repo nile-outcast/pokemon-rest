@@ -1,14 +1,23 @@
 import {
+  pokemonDetailParamsSchema,
+  pokemonDetailSchema,
   pokemonFiltersResponseSchema,
   pokemonListQuerySchema,
   pokemonListResponseSchema,
+  pokemonNotFoundResponseSchema,
   type PokemonType,
 } from '@pokemon-rest/shared'
 import { and, count, eq, gte, ilike, inArray, lte, SQL, sql } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
 import { db } from '../db/client'
-import { pokemonTable, pokemonTypesTable, typesTable } from '../db/schema'
+import {
+  abilitiesTable,
+  pokemonAbilitiesTable,
+  pokemonTable,
+  pokemonTypesTable,
+  typesTable,
+} from '../db/schema'
 
 /**
  * Собирает условия WHERE из query-параметров.
@@ -165,6 +174,74 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
     },
   )
 
+  // GET /api/pokemon/:id — детальная карточка для модального окна
+  app.get(
+    '/pokemon/:id',
+    {
+      schema: {
+        params: pokemonDetailParamsSchema,
+        response: {
+          200: pokemonDetailSchema,
+          404: pokemonNotFoundResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params
+
+      const [pokemon] = await db
+        .select({
+          id: pokemonTable.id,
+          name: pokemonTable.name,
+          spriteUrl: pokemonTable.spriteUrl,
+          color: pokemonTable.color,
+          hp: pokemonTable.hp,
+          attack: pokemonTable.attack,
+          defense: pokemonTable.defense,
+          specialAttack: pokemonTable.specialAttack,
+          specialDefense: pokemonTable.specialDefense,
+          baseExperience: pokemonTable.baseExperience,
+          generationId: pokemonTable.generationId,
+        })
+        .from(pokemonTable)
+        .where(eq(pokemonTable.id, id))
+
+      if (!pokemon) {
+        return reply.code(404).send({ message: `Pokemon ${id} not found` })
+      }
+
+      const [typeRows, abilityRows] = await Promise.all([
+        db
+          .select({
+            name: typesTable.name,
+            color: typesTable.color,
+          })
+          .from(pokemonTypesTable)
+          .innerJoin(typesTable, eq(pokemonTypesTable.typeId, typesTable.id))
+          .where(eq(pokemonTypesTable.pokemonId, id))
+          .orderBy(pokemonTypesTable.slot),
+        db
+          .select({
+            name: abilitiesTable.name,
+            isHidden: pokemonAbilitiesTable.isHidden,
+          })
+          .from(pokemonAbilitiesTable)
+          .innerJoin(
+            abilitiesTable,
+            eq(pokemonAbilitiesTable.abilityId, abilitiesTable.id),
+          )
+          .where(eq(pokemonAbilitiesTable.pokemonId, id))
+          .orderBy(pokemonAbilitiesTable.slot),
+      ])
+
+      return {
+        ...pokemon,
+        types: typeRows,
+        abilities: abilityRows,
+      }
+    },
+  )
+
   // GET /api/pokemon/filters — справочник для UI-фильтров
   app.get(
     '/pokemon/filters',
@@ -174,29 +251,55 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async () => {
-      const [typeList, attackRange, expRange] = await Promise.all([
+      const [typeList, [statsRange]] = await Promise.all([
         db
           .select({ id: typesTable.id, name: typesTable.name })
           .from(typesTable)
           .orderBy(typesTable.name),
         db
           .select({
-            min: sql<number>`min(attack)::int`,
-            max: sql<number>`max(attack)::int`,
-          })
-          .from(pokemonTable),
-        db
-          .select({
-            min: sql<number>`min(base_experience)::int`,
-            max: sql<number>`max(base_experience)::int`,
+            hpMin: sql<number>`min(hp)::int`,
+            hpMax: sql<number>`max(hp)::int`,
+            attackMin: sql<number>`min(attack)::int`,
+            attackMax: sql<number>`max(attack)::int`,
+            defenseMin: sql<number>`min(defense)::int`,
+            defenseMax: sql<number>`max(defense)::int`,
+            spAttackMin: sql<number>`min(special_attack)::int`,
+            spAttackMax: sql<number>`max(special_attack)::int`,
+            spDefenseMin: sql<number>`min(special_defense)::int`,
+            spDefenseMax: sql<number>`max(special_defense)::int`,
+            expMin: sql<number>`min(base_experience)::int`,
+            expMax: sql<number>`max(base_experience)::int`,
           })
           .from(pokemonTable),
       ])
 
       return {
         types: typeList,
-        attack: attackRange[0],
-        experience: expRange[0],
+        hp: {
+          min: statsRange.hpMin,
+          max: statsRange.hpMax,
+        },
+        attack: {
+          min: statsRange.attackMin,
+          max: statsRange.attackMax,
+        },
+        defense: {
+          min: statsRange.defenseMin,
+          max: statsRange.defenseMax,
+        },
+        specialAttack: {
+          min: statsRange.spAttackMin,
+          max: statsRange.spAttackMax,
+        },
+        specialDefense: {
+          min: statsRange.spDefenseMin,
+          max: statsRange.spDefenseMax,
+        },
+        experience: {
+          min: statsRange.expMin,
+          max: statsRange.expMax,
+        },
       }
     },
   )

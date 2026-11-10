@@ -6,7 +6,8 @@
  *   npx tsx src/scripts/seed.ts                -- полная обкачка (~1300 покемонов)
  *   npx tsx src/scripts/seed.ts --limit=20     -- только первые 20
  *
- * Идемпотентность: ON CONFLICT UPDATE по id, pokemon_types заменяются полностью.
+ * Идемпотентность: ON CONFLICT UPDATE по id, pokemon_types и pokemon_abilities
+ * заменяются полностью.
  * Повторный запуск без --limit пересоберет все данные с PokeAPI.
  */
 
@@ -18,7 +19,13 @@ import { eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import pg from 'pg'
 
-import { pokemonTable, pokemonTypesTable, typesTable } from '../db/schema'
+import {
+  abilitiesTable,
+  pokemonAbilitiesTable,
+  pokemonTable,
+  pokemonTypesTable,
+  typesTable,
+} from '../db/schema'
 
 const { Pool } = pg
 
@@ -48,8 +55,15 @@ interface PokeType {
   type: PokeEntry
 }
 
+interface PokeAbility {
+  is_hidden: boolean
+  slot: number
+  ability: PokeEntry
+}
+
 interface PokeSpecies {
   color: PokeEntry
+  generation: PokeEntry
 }
 
 interface PokeSprite {
@@ -67,6 +81,7 @@ interface PokePokemon {
   base_experience: number | null
   stats: Array<PokeStat>
   types: Array<PokeType>
+  abilities: Array<PokeAbility>
   sprites: PokeSprite
   species: PokeEntry
 }
@@ -149,6 +164,11 @@ function extractId(url: string, path: string): number {
   }
 
   return Number(match[1])
+}
+
+/** Значение базового стата по имени; 0 если стат не пришёл */
+function statOf(detail: PokePokemon, name: string): number {
+  return detail.stats.find((s) => s.stat.name === name)?.base_stat ?? 0
 }
 
 // ── основной поток ────────────────────────────────────────────────
@@ -253,11 +273,12 @@ async function main() {
   // 4. Записать в БД
   for (let i = 0; i < detailList.length; i++) {
     const detail = detailList[i]
-    // Извлекаем атаку и защиту по именам статов
-    const attack =
-      detail.stats.find((s) => s.stat.name === 'attack')?.base_stat ?? 0
-    const defense =
-      detail.stats.find((s) => s.stat.name === 'defense')?.base_stat ?? 0
+    // Извлекаем все 6 базовых статов
+    const hp = statOf(detail, 'hp')
+    const attack = statOf(detail, 'attack')
+    const defense = statOf(detail, 'defense')
+    const specialAttack = statOf(detail, 'special-attack')
+    const specialDefense = statOf(detail, 'special-defense')
     // Спрайт: официальный артворк, fallback на обычный спрайт
     const spriteUrl =
       detail.sprites.other?.['official-artwork']?.front_default ??
@@ -267,6 +288,8 @@ async function main() {
     const species = speciesList[i]
     // Hex-значение цвета вида покемона
     const color = SPECIES_COLORS[species.color.name]
+    // Номер поколения из pokemon-species.generation
+    const generationId = extractId(species.generation.url, 'generation')
 
     // Справочник типов неизменяем: существующие записи не трогаем
     await db
@@ -280,27 +303,48 @@ async function main() {
       )
       .onConflictDoNothing()
 
+    // Справочник способностей — аналогично типам
+    if (detail.abilities.length > 0) {
+      await db
+        .insert(abilitiesTable)
+        .values(
+          detail.abilities.map((a) => ({
+            id: extractId(a.ability.url, 'ability'),
+            name: a.ability.name,
+          })),
+        )
+        .onConflictDoNothing()
+    }
+
     // Upsert покемона: при повторном запуске обновляем данные из PokeAPI
     await db
       .insert(pokemonTable)
       .values({
         id: detail.id,
         name: detail.name,
+        hp,
         attack,
         defense,
+        specialAttack,
+        specialDefense,
         baseExperience: detail.base_experience ?? 0,
         spriteUrl,
         color,
+        generationId,
       })
       .onConflictDoUpdate({
         target: pokemonTable.id,
         set: {
           name: detail.name,
+          hp,
           attack,
           defense,
+          specialAttack,
+          specialDefense,
           baseExperience: detail.base_experience ?? 0,
           spriteUrl,
           color,
+          generationId,
         },
       })
 
@@ -315,6 +359,22 @@ async function main() {
           pokemonId: detail.id,
           typeId: extractId(t.type.url, 'type'),
           slot: t.slot,
+        })),
+      )
+    }
+
+    // pokemon_abilities — полностью перезаписываем для этого покемона
+    await db
+      .delete(pokemonAbilitiesTable)
+      .where(eq(pokemonAbilitiesTable.pokemonId, detail.id))
+
+    if (detail.abilities.length > 0) {
+      await db.insert(pokemonAbilitiesTable).values(
+        detail.abilities.map((a) => ({
+          pokemonId: detail.id,
+          abilityId: extractId(a.ability.url, 'ability'),
+          slot: a.slot,
+          isHidden: a.is_hidden,
         })),
       )
     }

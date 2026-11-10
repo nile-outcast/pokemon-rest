@@ -68,12 +68,32 @@ Vite запустится на `localhost:5173`. Запросы к `/api/*` пр
 
 ## Эндпоинты
 
-| Метод   | Путь                           | Описание              |
-|---------|--------------------------------|-----------------------|
-| `GET`   | `/health`                      | статус сервера        |
-| `GET`   | `/api/pokemon`                 | список с фильтрами    |
-| `GET`   | `/api/pokemon/filters`         | справочник для UI     |
-| `GET`   | `/docs`                        | Swagger UI            |
+| Метод   | Путь                           | Описание                        |
+|---------|--------------------------------|---------------------------------|
+| `GET`   | `/health`                      | статус сервера                  |
+| `GET`   | `/api/pokemon`                 | список с фильтрами              |
+| `GET`   | `/api/pokemon/:id`             | детали покемона для модалки     |
+| `GET`   | `/api/pokemon/filters`         | справочник для UI               |
+| `GET`   | `/docs`                        | Swagger UI                      |
+
+### Детальная карточка
+
+`GET /api/pokemon/:id` возвращает всё, что нужно модалке:
+
+| Поле              | Источник в PokeAPI                      |
+|-------------------|-----------------------------------------|
+| `hp`              | `pokemon.stats[hp]`                     |
+| `attack`          | `pokemon.stats[attack]`                 |
+| `defense`         | `pokemon.stats[defense]`                |
+| `specialAttack`   | `pokemon.stats[special-attack]`         |
+| `specialDefense`  | `pokemon.stats[special-defense]`        |
+| `baseExperience`  | `pokemon.base_experience`               |
+| `generationId`    | `pokemon-species.generation` (id 1..9)  |
+| `abilities`       | `pokemon.abilities` (`{name, isHidden}`)|
+| `types`           | `pokemon.types` + палитра типов         |
+| `color`           | `pokemon-species.color` + палитра вида  |
+
+Ответ `404` — `{ message }`, если покемона с таким id нет.
 
 ## Стек
 

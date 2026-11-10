@@ -15,6 +15,13 @@
       "when": 1794140116863,
       "tag": "0001_types_color",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794302490611,
+      "tag": "0002_pokemon_details",
+      "breakpoints": true
     }
   ]
 }

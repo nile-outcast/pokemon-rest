@@ -20,12 +20,12 @@ export type PokemonType = z.infer<typeof pokemonTypeSchema>
 export const pokemonListItemSchema = z.object({
   id: z.number().int().positive(),
   name: z.string(),
-  attack: z.number().int(),
-  defense: z.number().int(),
   // Официальный артворк может отсутствовать у отдельных форм
   spriteUrl: z.string().nullable(),
   // Hex-значение цвета вида покемона — из pokemon-species.color (видовое тело)
   color: z.string(),
+  attack: z.number().int(),
+  defense: z.number().int(),
   types: z.array(pokemonTypeSchema),
 })
 
@@ -81,10 +81,47 @@ export type NumberRange = z.infer<typeof numberRangeSchema>
 /** Ответ GET /api/pokemon/filters */
 export const pokemonFiltersResponseSchema = z.object({
   types: z.array(pokemonOptionSchema),
+  hp: numberRangeSchema,
   attack: numberRangeSchema,
+  defense: numberRangeSchema,
+  specialAttack: numberRangeSchema,
+  specialDefense: numberRangeSchema,
   experience: numberRangeSchema,
 })
 
 export type PokemonFiltersResponse = z.infer<
   typeof pokemonFiltersResponseSchema
+>
+
+/** Элемент списка способностей */
+export const pokemonAbilitySchema = z.object({
+  name: z.string(),
+  isHidden: z.boolean(),
+})
+
+export type PokemonAbility = z.infer<typeof pokemonAbilitySchema>
+
+/** Детальная карточка покемона — GET /api/pokemon/:id */
+export const pokemonDetailParamsSchema = z.object({
+  id: z.coerce.number().int().positive(),
+})
+
+export const pokemonDetailSchema = pokemonListItemSchema.extend({
+  hp: z.number().int(),
+  specialAttack: z.number().int(),
+  specialDefense: z.number().int(),
+  baseExperience: z.number().int(),
+  generationId: z.number().int().positive(),
+  abilities: z.array(pokemonAbilitySchema),
+})
+
+export type PokemonDetail = z.infer<typeof pokemonDetailSchema>
+
+/** Ответ 404 для детального эндпоинта */
+export const pokemonNotFoundResponseSchema = z.object({
+  message: z.string(),
+})
+
+export type PokemonNotFoundResponse = z.infer<
+  typeof pokemonNotFoundResponseSchema
 >
