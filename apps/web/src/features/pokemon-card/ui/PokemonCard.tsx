@@ -4,7 +4,6 @@ import { memo, useMemo } from 'react'
 import './PokemonCard.css'
 
 type PokemonCardProps = {
-  className?: string
   pokemon: PokemonListItem
 }
 
@@ -13,7 +12,7 @@ type Stat = {
   value: number
 }
 
-export const PokemonCard = memo(({ className, pokemon }: PokemonCardProps) => {
+export const PokemonCard = memo(({ pokemon }: PokemonCardProps) => {
   const stats: Array<Stat> = useMemo(
     () => [
       {
@@ -29,7 +28,7 @@ export const PokemonCard = memo(({ className, pokemon }: PokemonCardProps) => {
   )
 
   return (
-    <li className={`pokemon-card ${className ?? ''}`}>
+    <div className="pokemon-card">
       <div className="pokemon-card__content">
         <span className="pokemon-card__name">{pokemon.name}</span>
         <div className="pokemon-card__list">
@@ -60,6 +59,6 @@ export const PokemonCard = memo(({ className, pokemon }: PokemonCardProps) => {
           backgroundColor: pokemon.color,
         }}
       />
-    </li>
+    </div>
   )
 })

@@ -1,8 +1,3 @@
-.dropdown__trigger {
-  /* Radix вешает data-state на триггер: стрелка разворачивается по нему */
-  display: block;
-}
-
 .dropdown__button {
   display: flex;
   align-items: center;
@@ -32,7 +27,7 @@
   }
 
   /* Открытый триггер подсвечивается: видно, какой фильтр активен */
-  &[data-state='open'] {
+  &[data-popup-open] {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-bg);
   }
@@ -49,7 +44,7 @@
   text-overflow: ellipsis;
 }
 
-/* Стрелка-шеврон вместо REGULAR_POLYGON из макета (10×10) */
+/* Стрелка-шеврон */
 .dropdown__arrow {
   flex-shrink: 0;
   width: 7px;
@@ -59,13 +54,12 @@
   transform: translateY(-2px) rotate(45deg);
   transition: transform 0.15s;
 
-  [data-state='open'] & {
+  [data-popup-open] & {
     transform: translateY(2px) rotate(-135deg);
   }
 }
 
 .dropdown__content {
-  z-index: 2;
   min-width: 163px;
   padding: 8px;
   background: var(--bg);
@@ -74,12 +68,12 @@
   box-shadow: var(--shadow);
   outline: none;
 
-  /* Анимация появления: Radix держит панель в DOM до конца анимации */
-  &[data-state='open'] {
+  /* Анимация появления */
+  &[data-open] {
     animation: dropdown-in 0.12s ease-out;
   }
 
-  &[data-state='closed'] {
+  &[data-closed] {
     animation: dropdown-out 0.1s ease-in;
   }
 }

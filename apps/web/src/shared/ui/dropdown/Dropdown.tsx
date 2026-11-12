@@ -1,4 +1,4 @@
-import * as Popover from '@radix-ui/react-popover'
+import { Popover } from '@base-ui/react/popover'
 import type { CSSProperties, ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 import { isNullish } from 'typescript-extended-types'
@@ -44,37 +44,28 @@ export function Dropdown({
 
   const close = useCallback(() => setIsOpen(false), [])
 
-  const contentStyle: CSSProperties | undefined = isNullish(contentWidth)
+  const popupStyle: CSSProperties | undefined = isNullish(contentWidth)
     ? undefined
     : { width: `${contentWidth}px` }
 
   return (
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
-      <Popover.Trigger className="dropdown__trigger" asChild>
-        <button type="button" className="dropdown__button">
-          <span className="dropdown__label">{label}</span>
-          <span className="dropdown__arrow" aria-hidden="true" />
-        </button>
+      <Popover.Trigger className="dropdown__button">
+        <span className="dropdown__label">{label}</span>
+        <span className="dropdown__arrow" aria-hidden="true" />
       </Popover.Trigger>
 
       <Popover.Portal>
-        <Popover.Content
-          className="dropdown__content"
-          align="start"
-          sideOffset={6}
-          collisionPadding={12}
-          style={contentStyle}
-          onOpenAutoFocus={(event) => {
-            if (autoFocusContent) {
-              return
-            }
-
-            // Не отдаём фокус панели: он остаётся на триггере
-            event.preventDefault()
-          }}
-        >
-          {children(close)}
-        </Popover.Content>
+        <Popover.Positioner align="start" sideOffset={6} collisionPadding={12}>
+          <Popover.Popup
+            className="dropdown__content"
+            style={popupStyle}
+            // false — фокус остаётся на триггере; true — дефолтное поведение Base UI
+            initialFocus={autoFocusContent}
+          >
+            {children(close)}
+          </Popover.Popup>
+        </Popover.Positioner>
       </Popover.Portal>
     </Popover.Root>
   )

@@ -1,0 +1,20 @@
+.pokemon-detail {
+  display: flex;
+  height: 370px;
+  width: 800px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.pokemon-detail__image {
+  height: 100%;
+  width: 364px;
+  object-fit: contain;
+}
+
+.pokemon-detail__content {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  height: 100%;
+}
