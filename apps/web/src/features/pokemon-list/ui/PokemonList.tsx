@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/shallow'
 
 import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
 import { PokemonCard } from '@/features/pokemon-card'
-import { PokemonDetail } from '@/features/pokemon-detail'
+import { PokemonDetailModal } from '@/features/pokemon-detail'
 import { useIntersectionObserver } from '@/shared/hooks/use-intersection-observer'
 import { Button } from '@/shared/ui/button/Button'
 import { LoadStatus } from '@/shared/ui/load-status/LoadStatus'
@@ -96,16 +96,7 @@ export function PokemonList() {
         )}
       </ul>
 
-      <Dialog.Root handle={pokemonDetailsHandle}>
-        {({ payload }) => (
-          <Dialog.Portal>
-            <Dialog.Backdrop className="pokemon-details__backdrop" />
-            <Dialog.Popup className="pokemon-details__popup">
-              {payload && <PokemonDetail pokemonItem={payload} />}
-            </Dialog.Popup>
-          </Dialog.Portal>
-        )}
-      </Dialog.Root>
+      <PokemonDetailModal handle={pokemonDetailsHandle} />
     </>
   )
 }
