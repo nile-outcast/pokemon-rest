@@ -5,7 +5,6 @@ import {
 } from '@pokemon-rest/shared'
 import type { Nullable } from 'typescript-extended-types'
 
-import { POKEMON_API_BASE_URL } from '@/shared/config/pokemon-api'
 import { toErrorMessage } from '@/shared/helpers/to-error-message'
 import { readQueryParams } from '@/shared/helpers/url-query'
 import { createApiRequest } from '@/shared/models/create-api-request'
@@ -35,10 +34,9 @@ export interface PokemonFiltersSlice {
   fetchFiltersCatalog: () => Promise<void>
 }
 
-const filtersRequest = createApiRequest<PokemonFiltersResponse, Error>(
-  '/pokemon/filters',
-  { baseUrl: POKEMON_API_BASE_URL },
-)
+const filtersRequest = createApiRequest<PokemonFiltersResponse>({
+  path: '/pokemon/filters',
+})
 
 export const createPokemonFiltersSlice: SliceCreator<PokemonFiltersSlice> = (
   set,

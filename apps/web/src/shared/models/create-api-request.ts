@@ -6,6 +6,7 @@ import {
   type Nullable,
 } from 'typescript-extended-types'
 
+import { POKEMON_API_BASE_URL } from '@/shared/config/pokemon-api'
 import type {
   ApiCallArgs,
   ApiCallConfig,
@@ -21,7 +22,7 @@ interface ApiRequestHandle<D, E extends Error = Error> {
 }
 
 function buildUrl(path: string, query?: BaseObject): string {
-  if (!query || Object.keys(query).length === 0) {
+  if (isNullish(query) || Object.keys(query).length === 0) {
     return path
   }
 
@@ -43,7 +44,7 @@ function buildUrl(path: string, query?: BaseObject): string {
 async function safeParse<T>(response: Response): Promise<Nullable<T>> {
   const contentType = response.headers.get('content-type')
 
-  if (!contentType || !contentType.includes('application/json')) {
+  if (isNullish(contentType) || !contentType.includes('application/json')) {
     return null
   }
 
@@ -66,41 +67,53 @@ function getRequestBody<Body extends BaseObject | FormData>(
   return isFormData ? body : (JSON.stringify(body) ?? null)
 }
 
+const DEFAULT_CONFIG: ApiCallConfig = {
+  baseUrl: POKEMON_API_BASE_URL,
+}
+
 /**
  * Фабрика для выполнения HTTP-запросов с автоматической обработкой ошибок и отменой.
  *
- * @param path — URL или путь (без query-параметров)
- * @param config — опциональный метод, заголовки
+ * @param initConfig — опциональный метод, заголовки, путь
  * @returns объект с методом call(), cancel() и isPending()
  */
 export function createApiRequest<D, E extends Error = Error>(
-  path: string,
-  config: ApiCallConfig = {},
+  initConfig: ApiCallConfig = {},
 ): ApiRequestHandle<D, E> {
-  const baseUrl = config.baseUrl ?? ''
+  const config: ApiCallConfig = { ...DEFAULT_CONFIG, ...initConfig }
+
   let controller: Nullable<AbortController> = null
 
   return {
-    async call(params) {
+    async call(args = {}) {
+      const {
+        method = 'GET',
+        headers = {},
+        baseUrl = '',
+        path = '',
+        query,
+        body,
+      } = { ...config, ...args }
+
       controller?.abort()
 
       const currentController = new AbortController()
       controller = currentController
 
       try {
-        const url = buildUrl(`${baseUrl}${path}`, params?.query)
+        const url = buildUrl(`${baseUrl}${path}`, query)
 
-        const isFormData = params?.body instanceof FormData
+        const isFormData = body instanceof FormData
 
         const response = await fetch(url, {
-          method: config.method ?? 'GET',
+          method,
           headers: {
-            ...config.headers,
-            'Content-Type': isFormData
-              ? 'multipart/form-data'
-              : 'application/json',
+            ...headers,
+            ...(isFormData || isNullish(body)
+              ? {}
+              : { 'Content-Type': 'application/json' }),
           },
-          body: getRequestBody(params?.body),
+          body: getRequestBody(body),
           signal: currentController.signal,
         })
 
@@ -111,9 +124,12 @@ export function createApiRequest<D, E extends Error = Error>(
           }
         }
 
+        // 204 No Content — тела нет, D для такого запроса должен быть void
+        const data = response.status === 204 ? undefined : await response.json()
+
         return {
           isError: false,
-          data: await response.json(),
+          data: data as D,
         }
       } catch (rawError) {
         if (currentController.signal.aborted) {

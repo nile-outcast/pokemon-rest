@@ -99,7 +99,7 @@
     color 0.1s;
 
   &:hover {
-    color: #fff;
+    color: var(--text-light);
     background: var(--accent);
   }
 

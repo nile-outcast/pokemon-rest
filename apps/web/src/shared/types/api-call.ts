@@ -4,14 +4,16 @@ type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 export type ApiCallConfig = Partial<{
   method: ApiMethod
+  path: string
   baseUrl: string
   headers: BaseObject
 }>
 
-export type ApiCallArgs<Body extends BaseObject | FormData> = Partial<{
-  query: BaseObject
-  body: Body
-}>
+export type ApiCallArgs<Body extends BaseObject | FormData> = ApiCallConfig &
+  Partial<{
+    query: BaseObject
+    body: Body
+  }>
 
 export interface ApiCallSuccessResponse<D> {
   isError: false

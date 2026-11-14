@@ -1,7 +1,6 @@
 import type { PokemonListItem, PokemonListResponse } from '@pokemon-rest/shared'
 import { create } from 'zustand'
 
-import { POKEMON_API_BASE_URL } from '@/shared/config/pokemon-api'
 import { debounce, type DebouncedFn } from '@/shared/helpers/debounce'
 import { toErrorMessage } from '@/shared/helpers/to-error-message'
 import { writeQueryParams } from '@/shared/helpers/url-query'
@@ -30,10 +29,9 @@ interface PokemonState extends PokemonFiltersSlice {
   debouncedFetchPokemonList: DebouncedFn<() => Promise<void>>
 }
 
-const pokemonListRequest = createApiRequest<PokemonListResponse, Error>(
-  `/pokemon`,
-  { baseUrl: POKEMON_API_BASE_URL },
-)
+const pokemonListRequest = createApiRequest<PokemonListResponse>({
+  path: '/pokemon',
+})
 
 const DEBOUNCE_MS = 300
 
