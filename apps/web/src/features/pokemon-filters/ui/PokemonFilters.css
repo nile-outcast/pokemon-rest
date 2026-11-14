@@ -1,0 +1,13 @@
+.pokemon-filters {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  width: 100%;
+  max-width: 500px;
+}
+
+@media (max-width: 1024px) {
+  .pokemon-filters {
+    gap: 16px;
+  }
+}

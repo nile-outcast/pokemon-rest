@@ -1,14 +1,15 @@
 // eslint.config.js — flat config для ESLint v10
+import eslintReact from '@eslint-react/eslint-plugin'
 import js from '@eslint/js'
 import importX from 'eslint-plugin-import-x'
 import prettier from 'eslint-plugin-prettier/recommended'
-import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
 import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
-export default tseslint.config(
-  { ignores: ['dist', 'node_modules'] },
+export default defineConfig(
+  globalIgnores(['**/dist']),
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -17,7 +18,6 @@ export default tseslint.config(
       globals: globals.browser,
     },
     plugins: {
-      'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       'import-x': importX,
     },
@@ -29,7 +29,6 @@ export default tseslint.config(
       },
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
@@ -84,7 +83,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['vite.config.ts'],
+    files: ['**/vite.config.ts'],
     languageOptions: {
       globals: globals.node,
     },
@@ -124,5 +123,22 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // React-правила (jsx-key, правила хуков, чистота рендера и т.д.)
+    // применяем только к фронтенду: в apps/api и packages/shared React нет
+    ...eslintReact.configs['recommended-typescript'],
+    files: ['apps/web/**/*.{ts,tsx}'],
+  },
   prettier,
+  {
+    // Бэкенд выполняется в Node: нужны process, __dirname-аналоги и т.д.
+    // Правила фронтенда (Nullable, Array<T>, isNullish) не применимы к apps/api
+    files: ['apps/api/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+    rules: {
+      'no-restricted-syntax': 'off',
+    },
+  },
 )

@@ -1,0 +1,25 @@
+.pokemon-detail__abilities {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-prime);
+}
+
+.pokemon-detail__abilities-label {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.pokemon-detail__abilities-list {
+  font-size: 16px;
+  line-height: 1.5;
+  text-transform: capitalize;
+}
+
+.pokemon-detail__abilities-empty {
+  font-size: 14px;
+  opacity: 0.7;
+}
