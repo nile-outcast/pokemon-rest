@@ -21,7 +21,7 @@
 
 .pokemon-card__name {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: capitalize;
   text-shadow: var(--text-shadow);
 }
