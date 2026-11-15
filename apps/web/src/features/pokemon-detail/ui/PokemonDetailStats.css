@@ -31,7 +31,6 @@
   font-size: 12px;
   line-height: 12px;
   color: var(--text-second);
-  text-align: center;
 }
 
 @media (max-width: 639px) {

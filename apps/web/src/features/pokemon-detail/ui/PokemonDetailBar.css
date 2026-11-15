@@ -21,7 +21,7 @@
 .pokemon-detail__bar-fill {
   height: 100%;
   border-radius: 6px;
-  background: #f5db13;
+  background: var(--yellow);
 }
 
 .pokemon-detail__bar-value {
