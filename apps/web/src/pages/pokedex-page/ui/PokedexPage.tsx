@@ -1,13 +1,13 @@
 import { PokemonFilters } from '@/features/pokemon-filters'
 import { PokemonList } from '@/features/pokemon-list'
 import { PokemonSearch } from '@/features/pokemon-search'
-import './IndexPage.css'
 
-export function IndexPage() {
+import './PokedexPage.css'
+
+export default function PokedexPage() {
   return (
-    <section className="index-page">
-      <div className="index-page__toolbar">
-        <h1 className="index-page__header">Pokemon</h1>
+    <section className="pokedex-page">
+      <div className="pokedex-page__toolbar">
         <PokemonSearch />
         <PokemonFilters />
       </div>

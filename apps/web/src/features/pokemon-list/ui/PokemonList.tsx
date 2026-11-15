@@ -77,6 +77,12 @@ export function PokemonList() {
           </Dialog.Trigger>
         ))}
 
+        {isLoadingMore && (
+          <li className="pokemon-list__status pokemon-list__status--inline">
+            Загрузка…
+          </li>
+        )}
+
         {isErrorMore ? (
           <li className="pokemon-list__more-error">
             <p className="pokemon-list__status">
@@ -87,12 +93,6 @@ export function PokemonList() {
           </li>
         ) : (
           <li ref={setSentinelRef} className="pokemon-list__sentinel" />
-        )}
-
-        {isLoadingMore && (
-          <li className="pokemon-list__status pokemon-list__status--inline">
-            Загрузка…
-          </li>
         )}
       </ul>
 

@@ -16,7 +16,6 @@
   flex-direction: column;
   justify-content: space-between;
   padding: 8px 24px 12px;
-  text-align: start;
 }
 
 .pokemon-card__name {
