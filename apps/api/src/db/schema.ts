@@ -31,7 +31,23 @@ export const pokemonTable = pgTable(
     uniqueIndex('pokemon_name_unique').on(table.name),
     index('pokemon_attack_idx').on(table.attack),
     index('pokemon_experience_idx').on(table.baseExperience),
+    index('pokemon_generation_id_idx').on(table.generationId),
   ],
+)
+
+/**
+ * Справочник поколений (generation-i, generation-ii, ...).
+ *
+ * Наполняется сидом из pokemon-species.generation — отдельного запроса
+ * к /generation нет, id и name приходят вместе с видом покемона.
+ */
+export const generationsTable = pgTable(
+  'generations',
+  {
+    id: integer('id').primaryKey(),
+    name: text('name').notNull(),
+  },
+  (table) => [uniqueIndex('generations_name_unique').on(table.name)],
 )
 
 /** Справочник типов (electric, fire, ...) */

@@ -1,9 +1,9 @@
-import type { PokemonOption } from '@pokemon-rest/shared'
+import type { BaseEntity } from '@pokemon-rest/shared'
 
 import './FilterMultiSelect.css'
 
 interface FilterMultiSelectProps {
-  options: Array<PokemonOption>
+  options: Array<BaseEntity>
   selected: Array<number>
   onChange: (id: number) => void
 }

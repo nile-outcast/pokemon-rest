@@ -74,7 +74,16 @@ Vite запустится на `localhost:5173`. Запросы к `/api/*` пр
 | `GET`   | `/api/pokemon`                 | список с фильтрами              |
 | `GET`   | `/api/pokemon/:id`             | детали покемона для модалки     |
 | `GET`   | `/api/pokemon/filters`         | справочник для UI               |
+| `GET`   | `/api/generation`              | список поколений                |
+| `GET`   | `/api/generation/:id/pokemon`  | покемоны поколения              |
 | `GET`   | `/docs`                        | Swagger UI                      |
+
+### Поколения
+
+`GET /api/generation` возвращает `{ items: [{ id, name }], total }`, а
+`GET /api/generation/:id/pokemon` — `{ items: [{ id, name, spriteUrl, color }], total }`.
+Оба принимают `offset` (по умолч. 0) и `limit` (по умолч. 20, макс 100).
+Для несуществующего поколения второй эндпоинт отдаёт `404` — `{ message }`.
 
 ### Детальная карточка
 

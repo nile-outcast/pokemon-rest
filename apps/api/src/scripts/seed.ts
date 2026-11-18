@@ -3,24 +3,36 @@
  * Сидер для обкачки покемонов с PokeAPI.
  *
  * Запуск:
- *   npx tsx src/scripts/seed.ts                -- полная обкачка (~1300 покемонов)
+ *   npx tsx src/scripts/seed.ts                -- полная обкачка (~1350 записей)
  *   npx tsx src/scripts/seed.ts --limit=20     -- только первые 20
  *
+ * Данные обрабатываются пачками по CHUNK_SIZE: пачка выгружается из PokeAPI
+ * и сразу пишется в БД одной транзакцией, поэтому в памяти живёт только
+ * текущая пачка ответов /pokemon (каждый ответ содержит полный список moves).
+ *
  * Идемпотентность: ON CONFLICT UPDATE по id, pokemon_types и pokemon_abilities
- * заменяются полностью.
+ * перезаписываются полностью для id из текущей пачки.
  * Повторный запуск без --limit пересоберет все данные с PokeAPI.
+ *
+ * Формы с is_default: false (мега/гигамакс/регионалки) тоже сидятся:
+ * список /pokemon в PokeAPI их содержит, и фронт показывает их наравне с
+ * базовыми видами. Если нужны только базовые формы — фильтровать entries.
+ *
+ * Особенности данных: у части альтернативных форм (в текущем дампе 9,
+ * например zygarde-mega) PokeAPI отдаёт пустой abilities — это данные API,
+ * а не потеря сида. Типы stellar/unknown/shadow не назначены ни одному
+ * покемону, поэтому в справочник типов они не попадают.
  */
 
-import { resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-import { config as loadEnv } from 'dotenv'
-import { eq, sql } from 'drizzle-orm'
+import { inArray, sql } from 'drizzle-orm'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import pg from 'pg'
 
+import { env } from '../config/env'
 import {
   abilitiesTable,
+  generationsTable,
   pokemonAbilitiesTable,
   pokemonTable,
   pokemonTypesTable,
@@ -29,14 +41,16 @@ import {
 
 const { Pool } = pg
 
-// .env в корне монорепо: от scripts/seed.ts вверх на 4 уровня
-const repoRoot = fileURLToPath(new URL('../../../..', import.meta.url))
-loadEnv({ path: resolve(repoRoot, '.env') })
-
-const DB_URL = process.env.DATABASE_URL!
-const POKEAPI_BASE = process.env.POKEAPI_BASE_URL ?? 'https://pokeapi.co/api/v2'
 const CONCURRENCY = 8
 const MAX_RETRIES = 3
+/**
+ * Явный таймаут запроса. Без него fetch полагается на дефолты undici
+ * (~300 с), и одна зависшая запись означала бы ожидание до 3 попыток
+ * по 5 минут вместо быстрого ретрая.
+ */
+const REQUEST_TIMEOUT_MS = 15_000
+/** Размер пачки загрузки+записи: держим баланс между round-trip'ами к БД и памятью */
+const CHUNK_SIZE = 200
 
 // ── типы ответов PokeAPI ──────────────────────────────────────────
 
@@ -62,6 +76,7 @@ interface PokeAbility {
 }
 
 interface PokeSpecies {
+  id: number
   color: PokeEntry
   generation: PokeEntry
 }
@@ -86,13 +101,48 @@ interface PokePokemon {
   species: PokeEntry
 }
 
+/**
+ * Строки справочников и связей. Состав колонок выводим из схемы через
+ * $inferInsert, чтобы не держать его в двух местах.
+ */
+type TypeRow = typeof typesTable.$inferInsert
+type AbilityRow = typeof abilitiesTable.$inferInsert
+type PokemonTypeLink = typeof pokemonTypesTable.$inferInsert
+type PokemonAbilityLink = typeof pokemonAbilitiesTable.$inferInsert
+
 // ── утилиты ─────────────────────────────────────────────────────
 
+/** HTTP-ошибка с кодом ответа: по коду решаем, можно ли повторять запрос */
+class HttpError extends Error {
+  status: number
+
+  constructor(status: number, statusText: string, url: string) {
+    super(`${status} ${statusText} for ${url}`)
+    this.name = 'HttpError'
+    this.status = status
+  }
+}
+
+/**
+ * Повторять имеет смысл только временные сбои: 5xx, 429 (rate limit)
+ * и сетевые ошибки/таймауты. 4xx — детерминированный ответ, ретрай
+ * лишь сжигает время.
+ */
+function isRetryable(err: unknown): boolean {
+  if (err instanceof HttpError) {
+    return err.status >= 500 || err.status === 429
+  }
+
+  return true
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url)
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  })
 
   if (!res.ok) {
-    throw new Error(`${res.status} ${res.statusText} for ${url}`)
+    throw new HttpError(res.status, res.statusText, url)
   }
 
   return res.json() as Promise<T>
@@ -106,7 +156,7 @@ async function fetchWithRetry<T>(
     try {
       return await fetchJson<T>(url)
     } catch (err) {
-      if (attempt === retries) throw err
+      if (attempt === retries || !isRetryable(err)) throw err
 
       const delay = Math.min(1000 * 2 ** (attempt - 1), 10_000)
       process.stderr.write(
@@ -147,16 +197,28 @@ function parseArgs(): { limit: number } {
   const raw = args
     .find((a) => a.startsWith('--limit='))
     ?.slice('--limit='.length)
-  const limit = raw ? parseInt(raw, 10) : Infinity
 
-  if (isNaN(limit)) throw new Error(`Invalid --limit: ${raw}`)
+  if (raw === undefined) return { limit: Infinity }
+
+  if (raw.trim() === '') {
+    throw new Error('Invalid --limit: empty value (expected integer >= 0)')
+  }
+
+  const limit = Number(raw)
+
+  // Без проверки на целое и неотрицательное --limit=-5 через slice(0, -5)
+  // молча отрежет последние 5 записей вместо ожидаемой ошибки
+  if (!Number.isSafeInteger(limit) || limit < 0) {
+    throw new Error(`Invalid --limit: ${raw} (expected integer >= 0)`)
+  }
 
   return { limit }
 }
 
 /** Извлекает id из URL вида https://pokeapi.co/api/v2/{path}/1/ */
 function extractId(url: string, path: string): number {
-  const regexp = new RegExp(`/${path}/(\\d+)/$`)
+  // завершающий слэш не обязателен: часть зеркал отдаёт URL без него
+  const regexp = new RegExp(`/${path}/(\\d+)/?$`)
   const match = url.match(regexp)
 
   if (!match) {
@@ -166,9 +228,50 @@ function extractId(url: string, path: string): number {
   return Number(match[1])
 }
 
-/** Значение базового стата по имени; 0 если стат не пришёл */
+/**
+ * Значение базового стата по имени.
+ * Отсутствующий стат — ошибка, а не 0: иначе переименование стата в
+ * PokeAPI тихо испортит данные в БД.
+ */
 function statOf(detail: PokePokemon, name: string): number {
-  return detail.stats.find((s) => s.stat.name === name)?.base_stat ?? 0
+  const stat = detail.stats.find((s) => s.stat.name === name)
+
+  if (!stat) {
+    throw new Error(
+      `Pokemon ${detail.name} (id ${detail.id}) has no "${name}" stat`,
+    )
+  }
+
+  return stat.base_stat
+}
+
+/** Разбивает массив на пачки фиксированного размера */
+function chunked<T>(items: Array<T>, size: number): Array<Array<T>> {
+  const chunks: Array<Array<T>> = []
+
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size))
+  }
+
+  return chunks
+}
+
+/**
+ * Достаёт вид из кэша по id.
+ * Промах означает ошибку сборки пачки (id не был загружен), а не отсутствие
+ * данных в PokeAPI, поэтому это ошибка, а не null.
+ */
+function requireSpecies(
+  cache: Map<number, PokeSpecies>,
+  id: number,
+): PokeSpecies {
+  const species = cache.get(id)
+
+  if (!species) {
+    throw new Error(`Species ${id} is missing from cache`)
+  }
+
+  return species
 }
 
 // ── основной поток ────────────────────────────────────────────────
@@ -178,6 +281,10 @@ function statOf(detail: PokePokemon, name: string): number {
  *
  * PokeAPI не отдаёт цвет типа, только имя, поэтому справочник держим
  * локально и записываем в колонку types.color при сиде.
+ *
+ * stellar/unknown/shadow ни один покемон текущего дампа не использует
+ * (у terapagos-stellar в PokeAPI тип normal), но держим справочник
+ * полным на все 21 тип: types.color — NOT NULL.
  */
 const TYPE_COLORS: Record<string, string> = {
   normal: '#A8A77A',
@@ -198,6 +305,9 @@ const TYPE_COLORS: Record<string, string> = {
   dark: '#705746',
   steel: '#B7B7CE',
   fairy: '#D685AA',
+  stellar: '#00A39C',
+  unknown: '#8B8B8B',
+  shadow: '#4A4A4A',
 }
 
 /**
@@ -219,179 +329,286 @@ const SPECIES_COLORS: Record<string, string> = {
   yellow: '#F8D030',
 }
 
-async function main() {
-  const { limit } = parseArgs()
+/**
+ * Цвет для имени, которого нет в палитре.
+ *
+ * types.color и pokemon.color — NOT NULL, поэтому undefined отдать нельзя.
+ * Оттенок нейтральный и намеренно не совпадает ни с одним цветом палитры,
+ * чтобы такие записи были отличимы в данных и на фронте.
+ */
+const FALLBACK_COLOR = '#9E9E9E'
 
-  const pool = new Pool({ connectionString: DB_URL })
-  const db = drizzle(pool)
+const warnedColors = new Set<string>()
 
-  // 1. Получить полный список покемонов
-  const pokedex = await fetchWithRetry<{ results: Array<PokeEntry> }>(
-    `${POKEAPI_BASE}/pokemon?limit=100000`,
-  )
+/**
+ * Достаёт hex из палитры по имени, при пропуске пишет предупреждение
+ * (один раз на имя) и отдаёт FALLBACK_COLOR.
+ */
+function colorOf(
+  palette: Record<string, string>,
+  name: string,
+  kind: string,
+): string {
+  const color = palette[name]
 
-  const entries = pokedex.results.slice(
-    0,
-    limit === Infinity ? undefined : limit,
-  )
-  process.stderr.write(`\n📦 found ${entries.length} pokemon\n`)
+  if (color === undefined) {
+    const key = `${kind}:${name}`
 
-  // 2. Загрузить деталки покемонов параллельно
-  const detailList = await concurrentMap(
-    entries,
-    async (entry) =>
-      fetchWithRetry<PokePokemon>(
-        // entry.url - абсолютные ссылки на свой хост.
-        // Используем склейку на случай если POKEAPI_BASE будет указывать на зеркало или локальный прокси
-        `${POKEAPI_BASE}/pokemon/${extractId(entry.url, 'pokemon')}`,
-      ),
-    CONCURRENCY,
-  )
-
-  // 2b. Загрузить виды параллельно — для цвета вида
-  const speciesList = await concurrentMap(
-    detailList,
-    async (entry) =>
-      fetchWithRetry<PokeSpecies>(
-        `${POKEAPI_BASE}/pokemon-species/${extractId(entry.species.url, 'pokemon-species')}`,
-      ),
-    CONCURRENCY,
-  )
-
-  // 3. Обновить цвета типов — полный справочник по имени
-  const typeColorUpdates = Object.entries(TYPE_COLORS)
-
-  if (typeColorUpdates.length > 0) {
-    for (const [name, color] of typeColorUpdates) {
-      await db
-        .update(typesTable)
-        .set({ color })
-        .where(eq(typesTable.name, name))
+    if (!warnedColors.has(key)) {
+      warnedColors.add(key)
+      process.stderr.write(
+        `\n⚠ unknown ${kind} "${name}", using fallback ${FALLBACK_COLOR}\n`,
+      )
     }
+
+    return FALLBACK_COLOR
   }
 
-  // 4. Записать в БД
-  for (let i = 0; i < detailList.length; i++) {
-    const detail = detailList[i]
-    // Извлекаем все 6 базовых статов
-    const hp = statOf(detail, 'hp')
-    const attack = statOf(detail, 'attack')
-    const defense = statOf(detail, 'defense')
-    const specialAttack = statOf(detail, 'special-attack')
-    const specialDefense = statOf(detail, 'special-defense')
+  return color
+}
+
+/** Строка таблицы pokemon из деталей покемона и его вида */
+function toPokemonRow(detail: PokePokemon, species: PokeSpecies) {
+  return {
+    id: detail.id,
+    name: detail.name,
+    // 5 базовых статов из 6: speed в схеме не хранится
+    // отсутствующий стат — ошибка, а не 0
+    hp: statOf(detail, 'hp'),
+    attack: statOf(detail, 'attack'),
+    defense: statOf(detail, 'defense'),
+    specialAttack: statOf(detail, 'special-attack'),
+    specialDefense: statOf(detail, 'special-defense'),
+    baseExperience: detail.base_experience ?? 0,
     // Спрайт: официальный артворк, fallback на обычный спрайт
-    const spriteUrl =
+    spriteUrl:
       detail.sprites.other?.['official-artwork']?.front_default ??
       detail.sprites.front_default ??
-      null
-
-    const species = speciesList[i]
+      null,
     // Hex-значение цвета вида покемона
-    const color = SPECIES_COLORS[species.color.name]
+    color: colorOf(SPECIES_COLORS, species.color.name, 'species color'),
     // Номер поколения из pokemon-species.generation
-    const generationId = extractId(species.generation.url, 'generation')
+    generationId: extractId(species.generation.url, 'generation'),
+  }
+}
 
-    // Справочник типов неизменяем: существующие записи не трогаем
-    await db
-      .insert(typesTable)
-      .values(
-        detail.types.map((t) => ({
-          id: extractId(t.type.url, 'type'),
-          name: t.type.name,
-          color: TYPE_COLORS[t.type.name],
-        })),
-      )
-      .onConflictDoNothing()
+/**
+ * Обрабатывает одну пачку: выгружает детали и виды из PokeAPI, затем
+ * одной транзакцией обновляет справочники, покемонов и связи.
+ *
+ * Порядок внутри транзакции важен: справочники types/abilities/generations
+ * должны существовать до вставки связей, иначе FK не найдёт ссылку.
+ */
+async function processChunk(
+  db: NodePgDatabase,
+  entries: Array<PokeEntry>,
+  speciesCache: Map<number, PokeSpecies>,
+): Promise<number> {
+  const base = env.POKEAPI_BASE_URL
 
-    // Справочник способностей — аналогично типам
-    if (detail.abilities.length > 0) {
-      await db
-        .insert(abilitiesTable)
-        .values(
-          detail.abilities.map((a) => ({
-            id: extractId(a.ability.url, 'ability'),
-            name: a.ability.name,
-          })),
-        )
-        .onConflictDoNothing()
+  // 1. Детали покемонов пачки параллельно.
+  // entry.url — абсолютная ссылка на свой хост, но склеиваем с base на
+  // случай, если POKEAPI_BASE_URL указывает на зеркало или локальный прокси
+  const details = await concurrentMap(
+    entries,
+    (entry) =>
+      fetchWithRetry<PokePokemon>(
+        `${base}/pokemon/${extractId(entry.url, 'pokemon')}`,
+      ),
+    CONCURRENCY,
+  )
+
+  // 2. Виды параллельно — для цвета вида и поколения.
+  // Формы одного вида делят один species, поэтому грузим только id,
+  // которых ещё нет в кэше (кэш живёт всю обкачку, см. main)
+  const missingSpeciesIds = [
+    ...new Set(
+      details.map((detail) => extractId(detail.species.url, 'pokemon-species')),
+    ),
+  ].filter((id) => !speciesCache.has(id))
+
+  const loadedSpecies = await concurrentMap(
+    missingSpeciesIds,
+    (id) => fetchWithRetry<PokeSpecies>(`${base}/pokemon-species/${id}`),
+    CONCURRENCY,
+  )
+
+  for (const species of loadedSpecies) {
+    speciesCache.set(species.id, species)
+  }
+
+  const rows = details.map((detail) => ({
+    detail,
+    species: requireSpecies(
+      speciesCache,
+      extractId(detail.species.url, 'pokemon-species'),
+    ),
+  }))
+
+  // 3. Справочники и связи пачки собираем одним проходом: раньше types и
+  // abilities вставлялись для каждого покемона отдельно (~1350 × 2
+  // заведомо конфликтующих INSERT)
+  const typeById = new Map<number, TypeRow>()
+  const abilityById = new Map<number, AbilityRow>()
+  const generationById = new Map<number, string>()
+  const typeLinks: Array<PokemonTypeLink> = []
+  const abilityLinks: Array<PokemonAbilityLink> = []
+
+  for (const { detail, species } of rows) {
+    for (const t of detail.types) {
+      const typeId = extractId(t.type.url, 'type')
+
+      typeById.set(typeId, {
+        id: typeId,
+        name: t.type.name,
+        color: colorOf(TYPE_COLORS, t.type.name, 'type'),
+      })
+      typeLinks.push({ pokemonId: detail.id, typeId, slot: t.slot })
     }
 
-    // Upsert покемона: при повторном запуске обновляем данные из PokeAPI
-    await db
-      .insert(pokemonTable)
-      .values({
-        id: detail.id,
-        name: detail.name,
-        hp,
-        attack,
-        defense,
-        specialAttack,
-        specialDefense,
-        baseExperience: detail.base_experience ?? 0,
-        spriteUrl,
-        color,
-        generationId,
+    for (const a of detail.abilities) {
+      const abilityId = extractId(a.ability.url, 'ability')
+
+      abilityById.set(abilityId, { id: abilityId, name: a.ability.name })
+      abilityLinks.push({
+        pokemonId: detail.id,
+        abilityId,
+        slot: a.slot,
+        isHidden: a.is_hidden,
       })
+    }
+
+    // Справочник поколений — id и name уже пришли в species,
+    // отдельный запрос к /generation не нужен
+    generationById.set(
+      extractId(species.generation.url, 'generation'),
+      species.generation.name,
+    )
+  }
+
+  const pokemonIds = rows.map(({ detail }) => detail.id)
+
+  // 4. Вся пачка — одна транзакция: при ошибке откатывается целиком,
+  // в БД не остаётся покемон без связей
+  await db.transaction(async (tx) => {
+    // Upsert: при повторном запуске имя поколения перезаписывается из PokeAPI
+    if (generationById.size > 0) {
+      await tx
+        .insert(generationsTable)
+        .values(Array.from(generationById, ([id, name]) => ({ id, name })))
+        .onConflictDoUpdate({
+          target: generationsTable.id,
+          set: { name: sql`excluded.name` },
+        })
+    }
+
+    // Цвета типов берутся из палитры здесь же: раньше это было 18
+    // отдельных UPDATE по имени (на пустой таблице — впустую)
+    if (typeById.size > 0) {
+      await tx
+        .insert(typesTable)
+        .values(Array.from(typeById.values()))
+        .onConflictDoUpdate({
+          target: typesTable.id,
+          set: { name: sql`excluded.name`, color: sql`excluded.color` },
+        })
+    }
+
+    if (abilityById.size > 0) {
+      await tx
+        .insert(abilitiesTable)
+        .values(Array.from(abilityById.values()))
+        .onConflictDoUpdate({
+          target: abilitiesTable.id,
+          set: { name: sql`excluded.name` },
+        })
+    }
+
+    // Upsert покемонов пачки: при повторном запуске обновляем данные из PokeAPI
+    await tx
+      .insert(pokemonTable)
+      .values(rows.map(({ detail, species }) => toPokemonRow(detail, species)))
       .onConflictDoUpdate({
         target: pokemonTable.id,
         set: {
-          name: detail.name,
-          hp,
-          attack,
-          defense,
-          specialAttack,
-          specialDefense,
-          baseExperience: detail.base_experience ?? 0,
-          spriteUrl,
-          color,
-          generationId,
+          name: sql`excluded.name`,
+          hp: sql`excluded.hp`,
+          attack: sql`excluded.attack`,
+          defense: sql`excluded.defense`,
+          specialAttack: sql`excluded.special_attack`,
+          specialDefense: sql`excluded.special_defense`,
+          baseExperience: sql`excluded.base_experience`,
+          spriteUrl: sql`excluded.sprite_url`,
+          color: sql`excluded.color`,
+          generationId: sql`excluded.generation_id`,
         },
       })
 
-    // pokemon_types — полностью перезаписываем для этого покемона
-    await db
+    // pokemon_types — полностью перезаписываем для id из пачки
+    await tx
       .delete(pokemonTypesTable)
-      .where(eq(pokemonTypesTable.pokemonId, detail.id))
+      .where(inArray(pokemonTypesTable.pokemonId, pokemonIds))
 
-    if (detail.types.length > 0) {
-      await db.insert(pokemonTypesTable).values(
-        detail.types.map((t) => ({
-          pokemonId: detail.id,
-          typeId: extractId(t.type.url, 'type'),
-          slot: t.slot,
-        })),
-      )
+    if (typeLinks.length > 0) {
+      await tx.insert(pokemonTypesTable).values(typeLinks)
     }
 
-    // pokemon_abilities — полностью перезаписываем для этого покемона
-    await db
+    // pokemon_abilities — полностью перезаписываем для id из пачки
+    await tx
       .delete(pokemonAbilitiesTable)
-      .where(eq(pokemonAbilitiesTable.pokemonId, detail.id))
+      .where(inArray(pokemonAbilitiesTable.pokemonId, pokemonIds))
 
-    if (detail.abilities.length > 0) {
-      await db.insert(pokemonAbilitiesTable).values(
-        detail.abilities.map((a) => ({
-          pokemonId: detail.id,
-          abilityId: extractId(a.ability.url, 'ability'),
-          slot: a.slot,
-          isHidden: a.is_hidden,
-        })),
+    if (abilityLinks.length > 0) {
+      await tx.insert(pokemonAbilitiesTable).values(abilityLinks)
+    }
+  })
+
+  return rows.length
+}
+
+async function main() {
+  const { limit } = parseArgs()
+
+  const pool = new Pool({ connectionString: env.DATABASE_URL })
+
+  try {
+    const db = drizzle(pool)
+
+    // 1. Получить полный список покемонов
+    const pokedex = await fetchWithRetry<{ results: Array<PokeEntry> }>(
+      `${env.POKEAPI_BASE_URL}/pokemon?limit=100000`,
+    )
+
+    const entries =
+      limit === Infinity ? pokedex.results : pokedex.results.slice(0, limit)
+    process.stderr.write(`\n📦 found ${entries.length} pokemon\n`)
+
+    // 2. Обкачка пачками. Кэш видов живёт всю обкачку: формы одного вида
+    // могут попасть в разные пачки
+    const speciesCache = new Map<number, PokeSpecies>()
+    const chunks = chunked(entries, CHUNK_SIZE)
+
+    for (const [index, chunk] of chunks.entries()) {
+      const written = await processChunk(db, chunk, speciesCache)
+
+      process.stderr.write(
+        `\r  chunk ${index + 1}/${chunks.length} — ${written} pokemon`,
       )
     }
 
-    process.stderr.write(`\r  ${String(detail.id).padStart(4)} ${detail.name}`)
+    // Итоговая статистика
+    const [total] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(pokemonTable)
+    process.stderr.write(`\n\n✅ done — ${total?.count} pokemon in database\n`)
+  } finally {
+    await pool.end()
   }
-
-  // Итоговая статистика
-  const [total] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(pokemonTable)
-  process.stderr.write(`\n\n✅ done — ${total.count} pokemon in database\n`)
-
-  await pool.end()
 }
 
 main().catch((err) => {
   console.error(err)
-  process.exit(1)
+  // process.exitCode вместо process.exit: даёт завершиться finally
+  // (pool.end) и не обрывает вывод stderr
+  process.exitCode = 1
 })

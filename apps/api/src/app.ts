@@ -7,6 +7,7 @@ import {
 
 import { registerCors } from './plugins/cors'
 import { registerSwagger } from './plugins/swagger'
+import { generationRoute } from './routes/generation'
 import { healthRoute } from './routes/health'
 import { pokemonRoute } from './routes/pokemon'
 
@@ -28,6 +29,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Маршруты
   app.withTypeProvider<ZodTypeProvider>().register(healthRoute)
   app.withTypeProvider<ZodTypeProvider>().register(pokemonRoute, {
+    prefix: '/api',
+  })
+  app.withTypeProvider<ZodTypeProvider>().register(generationRoute, {
     prefix: '/api',
   })
 
