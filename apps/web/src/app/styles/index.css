@@ -82,8 +82,17 @@ h2,
 h3,
 h4,
 h5,
-h6 {
+h6,
+ul,
+ol,
+li {
+  padding: 0;
   margin: 0;
+}
+
+ul,
+ol {
+  list-style: none;
 }
 
 h1,

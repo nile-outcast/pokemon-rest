@@ -4,11 +4,12 @@ import { useEffect } from 'react'
 import { useShallow } from 'zustand/shallow'
 
 import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
-import { PokemonCard } from '@/features/pokemon-card'
 import { PokemonDetailModal } from '@/features/pokemon-detail'
 import { useIntersectionObserver } from '@/shared/hooks/use-intersection-observer'
 import { Button } from '@/shared/ui/button/Button'
 import { LoadStatus } from '@/shared/ui/load-status/LoadStatus'
+
+import { PokemonCard } from './PokemonCard'
 
 import './PokemonList.css'
 
@@ -46,7 +47,7 @@ export function PokemonList() {
 
   const isEmptyList = items.length === 0
 
-  if (isEmptyList && (isLoading || isError)) {
+  if (isLoading || isError || isEmptyList) {
     return (
       <div className="pokemon-list__centered">
         <LoadStatus

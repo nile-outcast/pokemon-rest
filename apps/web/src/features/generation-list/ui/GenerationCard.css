@@ -1,0 +1,22 @@
+.generation-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 700px;
+  width: 100%;
+}
+
+.generation-card__title {
+  font-family: var(--mono);
+  font-size: 28px;
+  color: var(--text-prime);
+  padding-bottom: 18px;
+  margin: 0;
+  border-bottom: 1px solid var(--text-prime);
+}
+
+/**
+ * Блок списка покемонов прижимается к низу карточки.
+ */
+.generation-card__pokemon {
+  margin-top: auto;
+}
