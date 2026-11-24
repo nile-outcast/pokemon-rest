@@ -14,7 +14,7 @@ interface DropdownProps {
    * Функция получает колбэк `close`, чтобы вложенный контент мог закрыть
    * дропдаун сам — например кнопка «Применить» в диапазоне.
    */
-  children: (close: () => void) => ReactNode
+  children: (close: VoidFunction) => ReactNode
   /**
    * Перенос фокуса внутрь панели при открытии.
    *

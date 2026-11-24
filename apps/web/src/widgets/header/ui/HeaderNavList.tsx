@@ -4,7 +4,7 @@ import { navItems } from '@/shared/config/routes'
 
 type HeaderNavListProps = {
   className?: string
-  onClick?: () => void
+  onClick?: VoidFunction
 }
 
 /** Навигационный список для десктопного хедера и мобильного drawer */

@@ -24,6 +24,8 @@ export const pokemonTable = pgTable(
     spriteUrl: text('sprite_url'),
     // Цвет вида — из pokemon-species.color (10 цветов вида)
     color: text('color').notNull(),
+    // Описание вида — последний en flavor_text из pokemon-species.
+    description: text('description'),
     // Поколение — id из pokemon-species.generation (1..9), фронт рендерит «Generation {id}»
     generationId: smallint('generation_id').notNull(),
   },

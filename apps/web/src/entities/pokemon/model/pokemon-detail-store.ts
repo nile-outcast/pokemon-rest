@@ -20,7 +20,7 @@ interface PokemonDetailState {
   detail: Nullable<PokemonDetail>
   loadingStage: LoadingStageModel
   fetchPokemonDetail: (id: number) => Promise<void>
-  retryPokemonDetail: () => void
+  retryPokemonDetail: VoidFunction
 }
 
 /**

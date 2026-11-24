@@ -65,37 +65,39 @@ export function PokemonList() {
 
   return (
     <>
-      <ul className="pokemon-list">
-        {items.map((pokemon) => (
-          <Dialog.Trigger
-            key={pokemon.id}
-            handle={pokemonDetailsHandle}
-            payload={pokemon}
-            nativeButton={false}
-            render={<li />}
-          >
-            <PokemonCard pokemon={pokemon} />
-          </Dialog.Trigger>
-        ))}
+      <div className="pokemon-list__wrapper">
+        <ul className="pokemon-list">
+          {items.map((pokemon) => (
+            <Dialog.Trigger
+              key={pokemon.id}
+              handle={pokemonDetailsHandle}
+              payload={pokemon}
+              nativeButton={false}
+              render={<li />}
+            >
+              <PokemonCard pokemon={pokemon} />
+            </Dialog.Trigger>
+          ))}
 
-        {isLoadingMore && (
-          <li className="pokemon-list__status pokemon-list__status--inline">
-            Загрузка…
-          </li>
-        )}
+          {isLoadingMore && (
+            <li className="pokemon-list__status pokemon-list__status--inline">
+              Загрузка…
+            </li>
+          )}
 
-        {isErrorMore ? (
-          <li className="pokemon-list__more-error">
-            <p className="pokemon-list__status">
-              Не удалось догрузить покемонов
-              {loadMoreErrorMessage && `: ${loadMoreErrorMessage}`}
-            </p>
-            <Button onClick={fetchNextPage}>Дозагрузить</Button>
-          </li>
-        ) : (
-          <li ref={setSentinelRef} className="pokemon-list__sentinel" />
-        )}
-      </ul>
+          {isErrorMore ? (
+            <li className="pokemon-list__more-error">
+              <p className="pokemon-list__status">
+                Не удалось догрузить покемонов
+                {loadMoreErrorMessage && `: ${loadMoreErrorMessage}`}
+              </p>
+              <Button onClick={fetchNextPage}>Дозагрузить</Button>
+            </li>
+          ) : (
+            <li ref={setSentinelRef} className="pokemon-list__sentinel" />
+          )}
+        </ul>
+      </div>
 
       <PokemonDetailModal handle={pokemonDetailsHandle} />
     </>

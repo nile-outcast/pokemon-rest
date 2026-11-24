@@ -1,17 +1,23 @@
 .pokemon-list {
-  flex: 1;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 44px 34px;
+  gap: 24px 16px;
   margin: 0 auto;
-  min-height: 0;
   width: 100%;
   max-width: 1125px;
-  overflow-y: auto;
 
-  @media (max-width: 1024px) {
-    gap: 24px 18px;
+  @media (min-width: 1024px) {
+    gap: 44px 34px;
   }
+}
+
+.pokemon-list__wrapper {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px 24px;
+  min-height: 0;
+  width: 100%;
+  overflow-y: auto;
 }
 
 .pokemon-list__centered {

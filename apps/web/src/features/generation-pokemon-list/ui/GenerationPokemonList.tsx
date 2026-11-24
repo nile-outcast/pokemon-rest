@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import type { Nullable } from 'typescript-extended-types'
+import { type Nullable } from 'typescript-extended-types'
 import { useStore } from 'zustand'
 import { useShallow } from 'zustand/shallow'
 
 import type { GenerationPokemonStoreApi } from '@/entities/generation/model/generation-pokemon-store'
 import { useIntersectionObserver } from '@/shared/hooks/use-intersection-observer'
+import { useScrollIntoView } from '@/shared/hooks/use-scroll-into-view'
 import { Button } from '@/shared/ui/button/Button'
 import { LoadStatus } from '@/shared/ui/load-status/LoadStatus'
 
 import { GenerationPokemonCard } from './GenerationPokemonCard'
+import { GenerationPokemonListArrow } from './GenerationPokemonListArrow'
 
 import './GenerationPokemonList.css'
 
@@ -49,6 +51,10 @@ export function GenerationPokemonList({ store }: GenerationPokemonListProps) {
   )
 
   const items = useStore(store, (state) => state.items)
+  const selectedIndex = useStore(store, (state) => state.selectedIndex)
+  const selectPokemon = useStore(store, (state) => state.selectPokemon)
+  const selectPrevPokemon = useStore(store, (state) => state.selectPrevPokemon)
+  const selectNextPokemon = useStore(store, (state) => state.selectNextPokemon)
   const fetchGenerationPokemonList = useStore(
     store,
     (state) => state.fetchGenerationPokemonList,
@@ -75,6 +81,18 @@ export function GenerationPokemonList({ store }: GenerationPokemonListProps) {
     isLoading: isLoading || isLoadingMore,
   })
 
+  /**
+   * Прокрутка выбранной карточки в видимую область.
+   *
+   * `key: selectedIndex` — эффект хука срабатывает при смене выбранного
+   * покемона (клик по карточке или стрелке) и доезжает до `li` с
+   * callback ref.
+   */
+  const { setTargetRef } = useScrollIntoView<HTMLLIElement>({
+    key: selectedIndex,
+    container: scrollRoot,
+  })
+
   const isEmptyList = items.length === 0
 
   if (isLoading || isError || isEmptyList) {
@@ -93,32 +111,63 @@ export function GenerationPokemonList({ store }: GenerationPokemonListProps) {
     )
   }
 
+  /**
+   * Границы навигации стрелками.
+   *
+   * Считаются от уже загруженных `items`: `selectPokemon` сам отбрасывает
+   * выход за диапазон, поэтому стрелки лишь отражают это в `disabled`.
+   */
+  const hasPrev = selectedIndex > 0
+  const hasNext = selectedIndex < items.length - 1
+
   return (
-    <ul ref={setScrollRoot} className="generation-pokemon-list">
-      {items.map((pokemon) => (
-        <li key={pokemon.id}>
-          <GenerationPokemonCard pokemon={pokemon} />
-        </li>
-      ))}
+    <div className="generation-pokemon-list__layout">
+      <GenerationPokemonListArrow
+        direction="prev"
+        disabled={!hasPrev}
+        onClick={selectPrevPokemon}
+      />
 
-      {isLoadingMore && (
-        <li className="generation-pokemon-list__status">Загрузка…</li>
-      )}
+      <ul ref={setScrollRoot} className="generation-pokemon-list">
+        {items.map((pokemon, index) => (
+          <li
+            key={pokemon.id}
+            ref={index === selectedIndex ? setTargetRef : null}
+          >
+            <GenerationPokemonCard
+              pokemon={pokemon}
+              index={index}
+              selected={index === selectedIndex}
+              onSelect={selectPokemon}
+            />
+          </li>
+        ))}
 
-      {isErrorMore ? (
-        <li className="generation-pokemon-list__more-error">
-          <p className="generation-pokemon-list__status">
-            Не удалось догрузить покемонов
-            {loadMoreErrorMessage && `: ${loadMoreErrorMessage}`}
-          </p>
-          <Button onClick={fetchNextPage}>Дозагрузить</Button>
-        </li>
-      ) : (
-        <li
-          ref={setSentinelRef}
-          className="generation-pokemon-list__sentinel"
-        />
-      )}
-    </ul>
+        {isLoadingMore && (
+          <li className="generation-pokemon-list__status">Загрузка…</li>
+        )}
+
+        {isErrorMore ? (
+          <li className="generation-pokemon-list__more-error">
+            <p className="generation-pokemon-list__status">
+              Не удалось догрузить покемонов
+              {loadMoreErrorMessage && `: ${loadMoreErrorMessage}`}
+            </p>
+            <Button onClick={fetchNextPage}>Дозагрузить</Button>
+          </li>
+        ) : (
+          <li
+            ref={setSentinelRef}
+            className="generation-pokemon-list__sentinel"
+          />
+        )}
+      </ul>
+
+      <GenerationPokemonListArrow
+        direction="next"
+        disabled={!hasNext}
+        onClick={selectNextPokemon}
+      />
+    </div>
   )
 }

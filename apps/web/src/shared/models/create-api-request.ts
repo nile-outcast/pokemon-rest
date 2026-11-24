@@ -17,7 +17,7 @@ interface ApiRequestHandle<D, E extends Error = Error> {
   call: <Body extends BaseObject | FormData = BaseObject>(
     params?: ApiCallArgs<Body>,
   ) => Promise<ApiCallResponse<D, E>>
-  cancel: () => void
+  cancel: VoidFunction
   isPending: () => boolean
 }
 

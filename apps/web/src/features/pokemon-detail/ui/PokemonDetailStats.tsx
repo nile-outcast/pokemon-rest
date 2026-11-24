@@ -1,5 +1,7 @@
 import type { PokemonDetail } from '@pokemon-rest/shared'
 
+import { STAT_LABEL_SHORT } from '@/shared/config/stat-labels'
+
 import './PokemonDetailStats.css'
 
 type PokemonDetailStatsProps = {
@@ -11,10 +13,10 @@ type PokemonDetailStatsProps = {
  */
 export function PokemonDetailStats({ detail }: PokemonDetailStatsProps) {
   const stats = [
-    { label: 'Defense', value: detail.defense },
-    { label: 'Attack', value: detail.attack },
-    { label: 'Sp Attack', value: detail.specialAttack },
-    { label: 'Sp Defense', value: detail.specialDefense },
+    { label: STAT_LABEL_SHORT.defense, value: detail.defense },
+    { label: STAT_LABEL_SHORT.attack, value: detail.attack },
+    { label: STAT_LABEL_SHORT.specialAttack, value: detail.specialAttack },
+    { label: STAT_LABEL_SHORT.specialDefense, value: detail.specialDefense },
   ]
 
   return (

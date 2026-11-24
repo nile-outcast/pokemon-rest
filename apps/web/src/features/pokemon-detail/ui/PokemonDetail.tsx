@@ -1,12 +1,14 @@
 import type { PokemonListItem } from '@pokemon-rest/shared'
 import { useEffect } from 'react'
-import { isDefined, isNullish } from 'typescript-extended-types'
+import { isDefined } from 'typescript-extended-types'
 
 import { usePokemonDetailStore } from '@/entities/pokemon/model/pokemon-detail-store'
 import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
+import { STAT_LABEL } from '@/shared/config/stat-labels'
+import { getPokemonSpriteUrl } from '@/shared/helpers/get-pokemon-sprite-url'
+import { StatBar } from '@/shared/ui/stat-bar/StatBar'
 
 import { PokemonDetailAbilities } from './PokemonDetailAbilities'
-import { PokemonDetailBar } from './PokemonDetailBar'
 import { PokemonDetailHeader } from './PokemonDetailHeader'
 import { PokemonDetailStats } from './PokemonDetailStats'
 import { PokemonDetailTypes } from './PokemonDetailTypes'
@@ -49,17 +51,11 @@ export function PokemonDetail({ pokemonItem }: PokemonDetailProps) {
       className="pokemon-detail"
       style={{ backgroundColor: pokemonItem.color }}
     >
-      <div className="pokemon-detail__media">
-        {isNullish(pokemonItem.spriteUrl) ? (
-          <div className="pokemon-detail__image-placeholder" />
-        ) : (
-          <img
-            className="pokemon-detail__image"
-            src={pokemonItem.spriteUrl}
-            alt={pokemonItem.name}
-          />
-        )}
-      </div>
+      <img
+        className="pokemon-detail__image"
+        src={getPokemonSpriteUrl(pokemonItem.spriteUrl)}
+        alt={pokemonItem.name}
+      />
 
       <div className="pokemon-detail__content">
         <PokemonDetailHeader
@@ -96,14 +92,14 @@ export function PokemonDetail({ pokemonItem }: PokemonDetailProps) {
             <PokemonDetailAbilities abilities={detail.abilities} />
 
             <div className="pokemon-detail__bars">
-              <PokemonDetailBar
-                label="Healthy Points"
+              <StatBar
+                label={STAT_LABEL.hp}
                 value={detail.hp}
                 max={filtersCatalog?.hp.max ?? null}
               />
 
-              <PokemonDetailBar
-                label="Experience"
+              <StatBar
+                label={STAT_LABEL.baseExperience}
                 value={detail.baseExperience}
                 max={filtersCatalog?.experience.max ?? null}
               />

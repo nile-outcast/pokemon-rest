@@ -23,7 +23,7 @@
   --z-index-header: 2;
   --z-index-modal: 3;
 
-  font: 18px/145% var(--sans);
+  font: 18px/140% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light dark;
   color: var(--text-prime);
@@ -68,10 +68,8 @@ main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin: 0 auto;
   min-height: 0;
   width: 100%;
-  max-width: 1125px;
   overflow: hidden;
 }
 

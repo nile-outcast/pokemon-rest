@@ -8,10 +8,10 @@ import type { SliceCreator } from '@/shared/types/slice-creator'
 export interface LoadingSlice {
   loadStatus: FetchStatus
   // Экшены по именам статусов
-  loading: () => void
-  success: () => void
-  error: () => void
-  reset: () => void
+  loading: VoidFunction
+  success: VoidFunction
+  error: VoidFunction
+  reset: VoidFunction
   // Предикаты
   isInitial: () => boolean
   isLoading: () => boolean

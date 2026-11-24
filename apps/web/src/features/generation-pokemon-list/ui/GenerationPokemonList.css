@@ -2,14 +2,27 @@
   display: flex;
   align-items: center;
   gap: 40px;
-  padding-top: 16px;
-  padding-inline: 20px;
-  min-height: 196px;
+  padding: 24px 20px 12px;
+  min-height: 200px;
   width: 100%;
   overflow-x: auto;
 
   & > li {
     flex-shrink: 0;
+  }
+}
+
+.generation-pokemon-list__layout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline: -12px;
+  width: calc(100% + 24px);
+
+  @media (min-width: 640px) {
+    gap: 16px;
+    margin-inline: 0;
+    width: 100%;
   }
 }
 

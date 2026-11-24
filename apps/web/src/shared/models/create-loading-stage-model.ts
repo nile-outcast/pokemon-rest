@@ -36,10 +36,10 @@ export interface LoadingStageModel extends Readonly<LoadingStageData> {
   readonly isInitial: boolean
   readonly isError: boolean
   readonly isFinished: boolean
-  loading: () => void
-  success: () => void
+  loading: VoidFunction
+  success: VoidFunction
   error: (message?: Nullable<string>) => void
-  reset: () => void
+  reset: VoidFunction
 }
 
 /**

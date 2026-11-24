@@ -7,11 +7,15 @@
 
 .generation-card__title {
   font-family: var(--mono);
-  font-size: 28px;
+  font-size: 32px;
   color: var(--text-prime);
   padding-bottom: 18px;
   margin: 0;
   border-bottom: 1px solid var(--text-prime);
+
+  @media (min-width: 640px) {
+    font-size: 44px;
+  }
 }
 
 /**

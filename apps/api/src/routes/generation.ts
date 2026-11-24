@@ -85,6 +85,13 @@ export const generationRoute: FastifyPluginAsyncZod = async (app) => {
           name: pokemonTable.name,
           spriteUrl: pokemonTable.spriteUrl,
           color: pokemonTable.color,
+          description: pokemonTable.description,
+          baseExperience: pokemonTable.baseExperience,
+          hp: pokemonTable.hp,
+          attack: pokemonTable.attack,
+          defense: pokemonTable.defense,
+          specialAttack: pokemonTable.specialAttack,
+          specialDefense: pokemonTable.specialDefense,
         })
         .from(pokemonTable)
         .where(conditions)

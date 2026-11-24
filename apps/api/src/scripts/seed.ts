@@ -75,10 +75,18 @@ interface PokeAbility {
   ability: PokeEntry
 }
 
+interface PokeFlavorText {
+  flavor_text: string
+  language: PokeEntry
+  version: PokeEntry
+}
+
 interface PokeSpecies {
   id: number
   color: PokeEntry
   generation: PokeEntry
+  // У форм (species id > 10000) поле может отсутствовать
+  flavor_text_entries?: Array<PokeFlavorText>
 }
 
 interface PokeSprite {
@@ -367,6 +375,33 @@ function colorOf(
   return color
 }
 
+/**
+ * Описание вида — последний en flavor_text.
+ *
+ * PokeAPI отдаёт описания по каждой игре и языку, массив отсортирован по
+ * хронологии релизов, поэтому последний en-элемент — самое свежее описание.
+ * У форм (species id > 10000) flavor_text_entries отсутствует вовсе.
+ *
+ * Текст пришёл из карточки игры: \f (разрыв страницы), переносы \n и
+ * мягкие переносы \u00ad внутри слов — всё это убираем.
+ */
+function descriptionOf(species: PokeSpecies): string | null {
+  const latest = species.flavor_text_entries?.findLast(
+    (entry) => entry.language.name === 'en',
+  )
+
+  if (!latest) {
+    return null
+  }
+
+  // \u00ad (soft hyphen) не входит в \s — снимаем отдельно. Переносы строк
+  // и \f покрывает \s+, отдельная замена для них не нужна.
+  return latest.flavor_text
+    .replace(/\u00ad/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 /** Строка таблицы pokemon из деталей покемона и его вида */
 function toPokemonRow(detail: PokePokemon, species: PokeSpecies) {
   return {
@@ -387,6 +422,8 @@ function toPokemonRow(detail: PokePokemon, species: PokeSpecies) {
       null,
     // Hex-значение цвета вида покемона
     color: colorOf(SPECIES_COLORS, species.color.name, 'species color'),
+    // Описание вида из pokemon-species.flavor_text_entries
+    description: descriptionOf(species),
     // Номер поколения из pokemon-species.generation
     generationId: extractId(species.generation.url, 'generation'),
   }
@@ -541,6 +578,7 @@ async function processChunk(
           spriteUrl: sql`excluded.sprite_url`,
           color: sql`excluded.color`,
           generationId: sql`excluded.generation_id`,
+          description: sql`excluded.description`,
         },
       })
 

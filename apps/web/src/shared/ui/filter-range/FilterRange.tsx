@@ -15,9 +15,9 @@ interface FilterRangeProps {
   range: NumberRange
   onChange: (value: RangeValue) => void
   /** Закрытие дропдауна после применения */
-  onClose: () => void
+  onClose: VoidFunction
   /** Доп. действие после успешного применения, например вызов API */
-  onApply?: () => void
+  onApply?: VoidFunction
 }
 
 function clamp(value: number, range: NumberRange): number {

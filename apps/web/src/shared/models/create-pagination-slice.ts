@@ -7,7 +7,7 @@ export interface PaginationSlice {
   hasMore: boolean
 
   setPage: (pageNumber: number) => void
-  resetPagination: () => void
+  resetPagination: VoidFunction
   getPageCount: () => number
 }
 

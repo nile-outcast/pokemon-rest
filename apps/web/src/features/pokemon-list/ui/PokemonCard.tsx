@@ -1,6 +1,8 @@
 import type { PokemonListItem } from '@pokemon-rest/shared'
 import { memo, useMemo } from 'react'
 
+import { STAT_LABEL } from '@/shared/config/stat-labels'
+import { getPokemonSpriteUrl } from '@/shared/helpers/get-pokemon-sprite-url'
 import './PokemonCard.css'
 
 type PokemonCardProps = {
@@ -16,11 +18,11 @@ export const PokemonCard = memo(({ pokemon }: PokemonCardProps) => {
   const stats: Array<Stat> = useMemo(
     () => [
       {
-        name: 'Attack',
+        name: STAT_LABEL.attack,
         value: pokemon.attack,
       },
       {
-        name: 'Defense',
+        name: STAT_LABEL.defense,
         value: pokemon.defense,
       },
     ],
@@ -53,7 +55,7 @@ export const PokemonCard = memo(({ pokemon }: PokemonCardProps) => {
       </div>
       <img
         className="pokemon-card__image"
-        src={pokemon.spriteUrl ?? undefined}
+        src={getPokemonSpriteUrl(pokemon.spriteUrl)}
         alt={pokemon.name}
         style={{
           backgroundColor: pokemon.color,

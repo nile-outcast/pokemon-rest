@@ -1,8 +1,8 @@
 import type {
+  GenerationPokemonCard,
   GenerationPokemonListResponse,
-  PokemonCard,
 } from '@pokemon-rest/shared'
-import { isDefined } from 'typescript-extended-types'
+import { isDefined, type Nullable } from 'typescript-extended-types'
 import { createStore } from 'zustand/vanilla'
 
 import { toErrorMessage } from '@/shared/helpers/to-error-message'
@@ -20,12 +20,33 @@ import {
  * Срез состояния одного поколения покемонов.
  */
 interface GenerationPokemonState {
-  items: Array<PokemonCard>
+  items: Array<GenerationPokemonCard>
+  /**
+   * Индекс выбранного покемона, а не его id: переключение стрелками
+   * оперирует соседними позициями списка. По умолчанию выбран первый.
+   */
+  selectedIndex: number
   pagination: PaginationModel
   loadingStage: LoadingStageModel
   loadingMoreStage: LoadingStageModel
+  selectPokemon: (index: number) => void
+  selectPrevPokemon: VoidFunction
+  selectNextPokemon: VoidFunction
   fetchGenerationPokemonList: () => Promise<void>
   fetchGenerationPokemonNextPage: () => Promise<void>
+}
+
+/**
+ * Индекс карточки в списке либо `null`, если карточки там нет.
+ *
+ * Несуществующий индекс не должен оставлять в сторе «мёртвую» выборку,
+ * поэтому селектор проверяет границу.
+ */
+export function pokemonAt(
+  items: Array<GenerationPokemonCard>,
+  index: number,
+): Nullable<GenerationPokemonCard> {
+  return items[index] ?? null
 }
 
 /**
@@ -53,9 +74,34 @@ function createGenerationPokemonStore(generationId: number) {
 
   return createStore<GenerationPokemonState>()((set, get) => ({
     items: [],
+    selectedIndex: 0,
     pagination: createPaginationModel(set, get, 'pagination', { limit: 8 }),
     loadingStage: createLoadingStageModel(set, get, 'loadingStage'),
     loadingMoreStage: createLoadingStageModel(set, get, 'loadingMoreStage'),
+
+    selectPokemon: (index) => {
+      // Клик вне диапазона (например, по карточке из устаревшего рендера)
+      // не должен переводить выбор в несуществующую позицию
+      if (index < 0 || index >= get().items.length) {
+        return
+      }
+
+      set({ selectedIndex: index })
+    },
+
+    selectPrevPokemon: () => {
+      set({ selectedIndex: Math.max(0, get().selectedIndex - 1) })
+    },
+
+    selectNextPokemon: () => {
+      const { items, selectedIndex } = get()
+
+      if (items.length === 0) return
+
+      set({
+        selectedIndex: Math.min(items.length - 1, selectedIndex + 1),
+      })
+    },
 
     fetchGenerationPokemonList: async () => {
       // Защита от повторного запроса при успехе или загрузке

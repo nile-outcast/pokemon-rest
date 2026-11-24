@@ -11,7 +11,7 @@ type ValueModelConfig<Value = string> = {
 export interface ValueModel<Value = string> {
   value: Value
   setValue: (value: SetStateAction<Value>) => void
-  resetValue: () => void
+  resetValue: VoidFunction
 }
 
 export const createValueModel =

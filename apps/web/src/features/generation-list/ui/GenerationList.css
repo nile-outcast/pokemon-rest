@@ -1,16 +1,19 @@
 .generation-list {
-  flex: 1;
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
   gap: 64px;
-  margin: 0 auto;
+  padding: 24px 16px;
   min-height: 0;
   width: 100%;
-  max-width: 1125px;
+
   overflow-y: auto;
 
   & > li {
     flex-shrink: 0;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 1125px;
   }
 }
 

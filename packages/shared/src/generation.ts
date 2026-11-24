@@ -17,9 +17,28 @@ export type GenerationListResponse = z.infer<
   typeof generationListResponseSchema
 >
 
+/**
+ * Элемент списка покемонов поколения.
+ *
+ * Содержит базовую карточку (id, name, spriteUrl, color) плюс
+ * пять статов и описание вида.
+ */
+export const generationPokemonCardSchema = pokemonCardSchema.extend({
+  hp: z.number().int(),
+  attack: z.number().int(),
+  defense: z.number().int(),
+  specialAttack: z.number().int(),
+  specialDefense: z.number().int(),
+  baseExperience: z.number().int(),
+  description: z.string().nullable(),
+})
+
+export type GenerationPokemonCard = z.infer<typeof generationPokemonCardSchema>
+
 /** Ответ списка покемонов поколения */
-export const generationPokemonListResponseSchema =
-  createListResponseSchema(pokemonCardSchema)
+export const generationPokemonListResponseSchema = createListResponseSchema(
+  generationPokemonCardSchema,
+)
 
 export type GenerationPokemonListResponse = z.infer<
   typeof generationPokemonListResponseSchema
