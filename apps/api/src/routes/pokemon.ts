@@ -56,9 +56,9 @@ function buildConditions(query: {
 }
 
 export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
-  // GET /api/pokemon — список с фильтрами и пагинацией
+  // GET /api/pokemon/list — список с фильтрами и пагинацией
   app.get(
-    '/pokemon',
+    '/pokemon/list',
     {
       schema: {
         querystring: pokemonListQuerySchema,

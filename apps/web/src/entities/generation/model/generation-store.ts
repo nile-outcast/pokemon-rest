@@ -22,7 +22,7 @@ interface GenerationState {
 }
 
 const generationListRequest = createApiRequest<GenerationListResponse>({
-  path: '/generation',
+  path: '/generation/list',
 })
 
 /**

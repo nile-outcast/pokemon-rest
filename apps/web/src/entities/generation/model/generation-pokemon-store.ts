@@ -53,7 +53,7 @@ export function pokemonAt(
  * Фабрика стора для покемонов одного поколения.
  *
  * Каждый вызов создаёт полностью изолированный стор:
- * - `createApiRequest` с путём `/generation/${id}/pokemon` (свой `AbortController`)
+ * - `createApiRequest` с путём `/generation/${id}/pokemon/list` (свой `AbortController`)
  * - `listRequestId` в замыкании фабрики
  * - `createPaginationModel` + `createLoadingStageModel` × 2
  *
@@ -62,7 +62,7 @@ export function pokemonAt(
  */
 function createGenerationPokemonStore(generationId: number) {
   const request = createApiRequest<GenerationPokemonListResponse>({
-    path: `/generation/${generationId}/pokemon`,
+    path: `/generation/${generationId}/pokemon/list`,
   })
 
   /**

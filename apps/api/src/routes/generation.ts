@@ -12,9 +12,9 @@ import { db } from '../db/client'
 import { generationsTable, pokemonTable } from '../db/schema'
 
 export const generationRoute: FastifyPluginAsyncZod = async (app) => {
-  // GET /api/generation — список поколений с пагинацией
+  // GET /api/generation/list — список поколений с пагинацией
   app.get(
-    '/generation',
+    '/generation/list',
     {
       schema: {
         querystring: paginationQuerySchema,
@@ -45,9 +45,9 @@ export const generationRoute: FastifyPluginAsyncZod = async (app) => {
     },
   )
 
-  // GET /api/generation/:id/pokemon — покемоны поколения с пагинацией
+  // GET /api/generation/:id/pokemon/list — покемоны поколения с пагинацией
   app.get(
-    '/generation/:id/pokemon',
+    '/generation/:id/pokemon/list',
     {
       schema: {
         params: idParamsSchema,

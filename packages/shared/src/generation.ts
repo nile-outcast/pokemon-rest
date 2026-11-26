@@ -4,7 +4,7 @@ import { baseEntitySchema, createListResponseSchema } from './common'
 import { pokemonCardSchema } from './pokemon'
 
 /**
- * Контракты эндпоинтов GET /api/generation и GET /api/generation/:id/pokemon.
+ * Контракты эндпоинтов GET /api/generation/list и GET /api/generation/:id/pokemon/list.
  *
  * Типы выводятся через z.infer — никаких ручных `T | null` или `T[]`.
  */

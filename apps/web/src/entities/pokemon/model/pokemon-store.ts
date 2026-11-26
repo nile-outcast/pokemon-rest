@@ -30,7 +30,7 @@ interface PokemonState extends PokemonFiltersSlice {
 }
 
 const pokemonListRequest = createApiRequest<PokemonListResponse>({
-  path: '/pokemon',
+  path: '/pokemon/list',
 })
 
 const DEBOUNCE_MS = 300
