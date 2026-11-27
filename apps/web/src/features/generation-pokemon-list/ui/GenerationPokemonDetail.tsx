@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { isDefined, isNullish } from 'typescript-extended-types'
 import { useStore } from 'zustand'
 
@@ -33,13 +32,6 @@ export function GenerationPokemonDetail({
   )
 
   const filtersCatalog = usePokemonStore((state) => state.filtersCatalog)
-  const fetchFiltersCatalog = usePokemonStore(
-    (state) => state.fetchFiltersCatalog,
-  )
-
-  useEffect(() => {
-    void fetchFiltersCatalog()
-  }, [fetchFiltersCatalog])
 
   if (isNullish(pokemon)) {
     return null
