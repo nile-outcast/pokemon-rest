@@ -5,10 +5,9 @@ import { useStore } from 'zustand'
 import {
   pokemonAt,
   type GenerationPokemonStoreApi,
-} from '@/entities/generation/model/generation-pokemon-store'
-import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
-import { STAT_LABEL } from '@/shared/config/stat-labels'
-import { getPokemonSpriteUrl } from '@/shared/helpers/get-pokemon-sprite-url'
+} from '@/entities/generation'
+import { STAT_LABEL, usePokemonStore } from '@/entities/pokemon'
+import { resolveImageUrl } from '@/shared/helpers/resolve-image-url'
 import { StatBar } from '@/shared/ui/stat-bar/StatBar'
 
 import './GenerationPokemonDetail.css'
@@ -83,7 +82,7 @@ export function GenerationPokemonDetail({
     <div className="generation-pokemon-detail">
       <img
         className="generation-pokemon-detail__image"
-        src={getPokemonSpriteUrl(pokemon.spriteUrl)}
+        src={resolveImageUrl(pokemon.spriteUrl)}
         alt={pokemon.name}
       />
 

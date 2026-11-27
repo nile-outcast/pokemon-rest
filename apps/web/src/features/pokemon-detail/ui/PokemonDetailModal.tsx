@@ -2,7 +2,7 @@ import { Dialog } from '@base-ui/react/dialog'
 import type { PokemonListItem } from '@pokemon-rest/shared'
 import { isDefined } from 'typescript-extended-types'
 
-import { PokemonDetail } from '@/features/pokemon-detail/ui/PokemonDetail'
+import { PokemonDetail } from './PokemonDetail'
 
 import './PokemonDetailModal.css'
 

@@ -4,24 +4,9 @@ import { create } from 'zustand'
 
 import { toErrorMessage } from '@/shared/helpers/to-error-message'
 import { createApiRequest } from '@/shared/models/create-api-request'
-import {
-  createLoadingStageModel,
-  type LoadingStageModel,
-} from '@/shared/models/create-loading-stage-model'
+import { createLoadingStageModel } from '@/shared/models/create-loading-stage-model'
 
-interface PokemonDetailState {
-  /**
-   * Детали загруженного покемона.
-   *
-   * Сбрасываются при запросе другого id, чтобы в модалке не осталось чужих
-   * цифр. Сохраняются при повторном открытии того же покемона — это кэш,
-   * второй запрос не нужен.
-   */
-  detail: Nullable<PokemonDetail>
-  loadingStage: LoadingStageModel
-  fetchPokemonDetail: (id: number) => Promise<void>
-  retryPokemonDetail: VoidFunction
-}
+import type { PokemonDetailState } from '../types'
 
 /**
  * id запроса, ответ на который ещё актуален.

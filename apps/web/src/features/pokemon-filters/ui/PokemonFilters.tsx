@@ -2,12 +2,13 @@ import { useEffect } from 'react'
 import { isNullish } from 'typescript-extended-types'
 import { useShallow } from 'zustand/shallow'
 
-import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
-import { FILTER_LABEL } from '@/features/pokemon-filters/config/filter-presets'
+import { usePokemonStore } from '@/entities/pokemon'
 import { Dropdown } from '@/shared/ui/dropdown/Dropdown'
 import { FilterMultiSelect } from '@/shared/ui/filter-multi-select/FilterMultiSelect'
 import { FilterRange } from '@/shared/ui/filter-range/FilterRange'
 import { LoadStatus } from '@/shared/ui/load-status/LoadStatus'
+
+import { FILTER_ARIA_LABEL, FILTER_LABEL } from '../config/filter-presets'
 
 import './PokemonFilters.css'
 
@@ -15,7 +16,7 @@ import './PokemonFilters.css'
  * Панель фильтров: три дропдауна в ряд (Тип, Атака, Опыт) под строкой
  * поиска.
  *
- * Значения живут здесь, а не внутри содержимого панелей: Radix
+ * Значения живут здесь, а не внутри содержимого панелей: Base UI
  * размонтирует панель при закрытии, и локальный state контента терялся бы
  * при каждом закрытии. Позже `useState` заменится на селекторы и экшены
  * стора, а разметка останется без изменений.
@@ -98,6 +99,7 @@ export function PokemonFilters() {
             options={filtersCatalog.types}
             selected={types}
             onChange={onChangeTypes}
+            ariaLabel={FILTER_ARIA_LABEL.types}
           />
         )}
       </Dropdown>
@@ -105,6 +107,7 @@ export function PokemonFilters() {
       <Dropdown label={FILTER_LABEL.attack}>
         {(onClose) => (
           <FilterRange
+            ariaLabel={FILTER_ARIA_LABEL.attack}
             value={attack}
             range={filtersCatalog.attack}
             onChange={setAttack}
@@ -117,6 +120,7 @@ export function PokemonFilters() {
       <Dropdown label={FILTER_LABEL.experience}>
         {(onClose) => (
           <FilterRange
+            ariaLabel={FILTER_ARIA_LABEL.experience}
             value={experience}
             range={filtersCatalog.experience}
             onChange={setExperience}

@@ -1,4 +1,4 @@
-import { GenerationList } from '@/features/generation-list'
+import { GenerationList } from '@/widgets/generation-list'
 
 import './GenerationsPage.css'
 

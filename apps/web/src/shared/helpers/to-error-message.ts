@@ -1,4 +1,4 @@
-import type { ApiCallErrorResponse } from '../types/api-call'
+import type { ApiCallErrorResponse } from '@/shared/types/api-call'
 
 export function toErrorMessage(response: ApiCallErrorResponse<Error>): string {
   const { data, rawError } = response

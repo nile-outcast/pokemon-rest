@@ -5,11 +5,9 @@ import { routes } from '@/shared/config/routes'
 import { Header } from '@/widgets/header'
 
 // Ленивые импорты для code splitting
-const HomePage = lazy(() => import('@/pages/home-page/ui/HomePage'))
-const PokedexPage = lazy(() => import('@/pages/pokedex-page/ui/PokedexPage'))
-const GenerationsPage = lazy(
-  () => import('@/pages/generations-page/ui/GenerationsPage'),
-)
+const HomePage = lazy(() => import('@/pages/home-page'))
+const PokedexPage = lazy(() => import('@/pages/pokedex-page'))
+const GenerationsPage = lazy(() => import('@/pages/generations-page'))
 
 const PageLoader = () => (
   <div

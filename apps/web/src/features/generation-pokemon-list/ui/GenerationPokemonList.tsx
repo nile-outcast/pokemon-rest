@@ -1,15 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { type Nullable } from 'typescript-extended-types'
 import { useStore } from 'zustand'
 import { useShallow } from 'zustand/shallow'
 
-import type { GenerationPokemonStoreApi } from '@/entities/generation/model/generation-pokemon-store'
+import {
+  GenerationPokemonCard,
+  type GenerationPokemonStoreApi,
+} from '@/entities/generation'
 import { useIntersectionObserver } from '@/shared/hooks/use-intersection-observer'
 import { useScrollIntoView } from '@/shared/hooks/use-scroll-into-view'
 import { Button } from '@/shared/ui/button/Button'
 import { LoadStatus } from '@/shared/ui/load-status/LoadStatus'
 
-import { GenerationPokemonCard } from './GenerationPokemonCard'
 import { GenerationPokemonListArrow } from './GenerationPokemonListArrow'
 
 import './GenerationPokemonList.css'
@@ -63,6 +65,10 @@ export function GenerationPokemonList({ store }: GenerationPokemonListProps) {
     store,
     (state) => state.fetchGenerationPokemonNextPage,
   )
+
+  useEffect(() => {
+    void fetchGenerationPokemonList()
+  }, [fetchGenerationPokemonList])
 
   /**
    * Контейнер горизонтального скролла как `root` наблюдателя.

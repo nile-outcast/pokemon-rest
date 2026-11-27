@@ -1,8 +1,10 @@
 import type { PokemonListItem } from '@pokemon-rest/shared'
 import { memo, useMemo } from 'react'
 
-import { STAT_LABEL } from '@/shared/config/stat-labels'
-import { getPokemonSpriteUrl } from '@/shared/helpers/get-pokemon-sprite-url'
+import { resolveImageUrl } from '@/shared/helpers/resolve-image-url'
+
+import { STAT_LABEL } from '../config/stat-labels'
+
 import './PokemonCard.css'
 
 type PokemonCardProps = {
@@ -55,7 +57,7 @@ export const PokemonCard = memo(({ pokemon }: PokemonCardProps) => {
       </div>
       <img
         className="pokemon-card__image"
-        src={getPokemonSpriteUrl(pokemon.spriteUrl)}
+        src={resolveImageUrl(pokemon.spriteUrl)}
         alt={pokemon.name}
         style={{
           backgroundColor: pokemon.color,

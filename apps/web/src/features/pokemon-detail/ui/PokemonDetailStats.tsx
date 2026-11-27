@@ -1,6 +1,6 @@
 import type { PokemonDetail } from '@pokemon-rest/shared'
 
-import { STAT_LABEL_SHORT } from '@/shared/config/stat-labels'
+import { STAT_LABEL_SHORT } from '@/entities/pokemon'
 
 import './PokemonDetailStats.css'
 

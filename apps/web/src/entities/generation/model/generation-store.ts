@@ -1,25 +1,12 @@
-import type { BaseEntity, GenerationListResponse } from '@pokemon-rest/shared'
+import type { GenerationListResponse } from '@pokemon-rest/shared'
 import { create } from 'zustand'
 
 import { toErrorMessage } from '@/shared/helpers/to-error-message'
 import { createApiRequest } from '@/shared/models/create-api-request'
-import {
-  createLoadingStageModel,
-  type LoadingStageModel,
-} from '@/shared/models/create-loading-stage-model'
-import {
-  createPaginationModel,
-  type PaginationModel,
-} from '@/shared/models/create-pagination-model'
+import { createLoadingStageModel } from '@/shared/models/create-loading-stage-model'
+import { createPaginationModel } from '@/shared/models/create-pagination-model'
 
-interface GenerationState {
-  items: Array<BaseEntity>
-  pagination: PaginationModel
-  loadingStage: LoadingStageModel
-  loadingMoreStage: LoadingStageModel
-  fetchGenerationList: () => Promise<void>
-  fetchNextPage: () => Promise<void>
-}
+import type { GenerationState } from '../types'
 
 const generationListRequest = createApiRequest<GenerationListResponse>({
   path: '/generation/list',

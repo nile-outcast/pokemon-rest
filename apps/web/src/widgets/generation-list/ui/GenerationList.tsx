@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useShallow } from 'zustand/shallow'
 
-import { useGenerationStore } from '@/entities/generation/model/generation-store'
+import { useGenerationStore } from '@/entities/generation'
 import { useIntersectionObserver } from '@/shared/hooks/use-intersection-observer'
 import { Button } from '@/shared/ui/button/Button'
 import { LoadStatus } from '@/shared/ui/load-status/LoadStatus'

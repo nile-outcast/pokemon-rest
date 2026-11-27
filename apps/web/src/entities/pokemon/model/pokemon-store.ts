@@ -1,33 +1,16 @@
-import type { PokemonListItem, PokemonListResponse } from '@pokemon-rest/shared'
+import type { PokemonListResponse } from '@pokemon-rest/shared'
 import { create } from 'zustand'
 
-import { debounce, type DebouncedFn } from '@/shared/helpers/debounce'
+import { debounce } from '@/shared/helpers/debounce'
 import { toErrorMessage } from '@/shared/helpers/to-error-message'
 import { writeQueryParams } from '@/shared/helpers/url-query'
 import { createApiRequest } from '@/shared/models/create-api-request'
-import {
-  createLoadingStageModel,
-  type LoadingStageModel,
-} from '@/shared/models/create-loading-stage-model'
-import {
-  createPaginationModel,
-  type PaginationModel,
-} from '@/shared/models/create-pagination-model'
+import { createLoadingStageModel } from '@/shared/models/create-loading-stage-model'
+import { createPaginationModel } from '@/shared/models/create-pagination-model'
 
-import {
-  createPokemonFiltersSlice,
-  type PokemonFiltersSlice,
-} from './pokemon-filters-slice'
+import type { PokemonState } from '../types'
 
-interface PokemonState extends PokemonFiltersSlice {
-  items: Array<PokemonListItem>
-  pagination: PaginationModel
-  loadingStage: LoadingStageModel
-  loadingMoreStage: LoadingStageModel
-  fetchPokemonList: () => Promise<void>
-  fetchNextPage: () => Promise<void>
-  debouncedFetchPokemonList: DebouncedFn<() => Promise<void>>
-}
+import { createPokemonFiltersSlice } from './pokemon-filters-slice'
 
 const pokemonListRequest = createApiRequest<PokemonListResponse>({
   path: '/pokemon/list',

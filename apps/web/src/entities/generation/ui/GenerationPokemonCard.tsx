@@ -1,7 +1,8 @@
 import type { GenerationPokemonCard as GenerationPokemonCardModel } from '@pokemon-rest/shared'
 import { memo } from 'react'
 
-import { getPokemonSpriteUrl } from '@/shared/helpers/get-pokemon-sprite-url'
+import { resolveImageUrl } from '@/shared/helpers/resolve-image-url'
+
 import './GenerationPokemonCard.css'
 
 type GenerationPokemonCardProps = {
@@ -29,7 +30,7 @@ export const GenerationPokemonCard = memo(
       >
         <img
           className="generation-pokemon-card__image"
-          src={getPokemonSpriteUrl(pokemon.spriteUrl)}
+          src={resolveImageUrl(pokemon.spriteUrl)}
           alt={pokemon.name}
         />
         <span className="generation-pokemon-card__name" title={pokemon.name}>

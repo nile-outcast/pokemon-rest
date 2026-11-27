@@ -2,10 +2,12 @@ import type { PokemonListItem } from '@pokemon-rest/shared'
 import { useEffect } from 'react'
 import { isDefined } from 'typescript-extended-types'
 
-import { usePokemonDetailStore } from '@/entities/pokemon/model/pokemon-detail-store'
-import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
-import { STAT_LABEL } from '@/shared/config/stat-labels'
-import { getPokemonSpriteUrl } from '@/shared/helpers/get-pokemon-sprite-url'
+import {
+  STAT_LABEL,
+  usePokemonDetailStore,
+  usePokemonStore,
+} from '@/entities/pokemon'
+import { resolveImageUrl } from '@/shared/helpers/resolve-image-url'
 import { StatBar } from '@/shared/ui/stat-bar/StatBar'
 
 import { PokemonDetailAbilities } from './PokemonDetailAbilities'
@@ -53,7 +55,7 @@ export function PokemonDetail({ pokemonItem }: PokemonDetailProps) {
     >
       <img
         className="pokemon-detail__image"
-        src={getPokemonSpriteUrl(pokemonItem.spriteUrl)}
+        src={resolveImageUrl(pokemonItem.spriteUrl)}
         alt={pokemonItem.name}
       />
 

@@ -3,13 +3,11 @@ import type { PokemonListItem } from '@pokemon-rest/shared'
 import { useEffect } from 'react'
 import { useShallow } from 'zustand/shallow'
 
-import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
+import { PokemonCard, usePokemonStore } from '@/entities/pokemon'
 import { PokemonDetailModal } from '@/features/pokemon-detail'
 import { useIntersectionObserver } from '@/shared/hooks/use-intersection-observer'
 import { Button } from '@/shared/ui/button/Button'
 import { LoadStatus } from '@/shared/ui/load-status/LoadStatus'
-
-import { PokemonCard } from './PokemonCard'
 
 import './PokemonList.css'
 

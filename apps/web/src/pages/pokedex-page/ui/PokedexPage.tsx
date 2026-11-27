@@ -1,6 +1,6 @@
 import { PokemonFilters } from '@/features/pokemon-filters'
-import { PokemonList } from '@/features/pokemon-list'
 import { PokemonSearch } from '@/features/pokemon-search'
+import { PokemonList } from '@/widgets/pokemon-list'
 
 import './PokedexPage.css'
 

@@ -21,6 +21,6 @@
 /**
  * Блок списка покемонов прижимается к низу карточки.
  */
-.generation-card__pokemon {
+.generation-card__pokemon-list {
   margin-top: auto;
 }

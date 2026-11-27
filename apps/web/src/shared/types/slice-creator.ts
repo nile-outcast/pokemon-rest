@@ -1,4 +1,4 @@
-import type { GetState, SetState } from './zustand-actions'
+import type { GetState, SetState } from '@/shared/types/zustand-actions'
 
 /**
  * Сигнатура фабрики среза для Zustand-стора.
@@ -8,8 +8,8 @@ import type { GetState, SetState } from './zustand-actions'
  * частью состояния, поэтому не зависит от целевого стора.
  *
  * Использование:
- *   export const createLoadingSlice: SliceCreator<LoadingSlice> = (set, get) => ({ ... })
- *   // в сторе: ...createLoadingSlice(set, get)
+ *   export const createCounterSlice: SliceCreator<CounterSlice> = (set, get) => ({ ... })
+ *   // в сторе: ...createCounterSlice(set, get)
  */
 export type SliceCreator<Slice, Config = undefined> = (
   set: SetState<Slice>,

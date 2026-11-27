@@ -1,11 +1,11 @@
 import type { BaseEntity } from '@pokemon-rest/shared'
-import { memo, useEffect } from 'react'
-import { useStore } from 'zustand'
+import { memo } from 'react'
 
-import { getGenerationPokemonStore } from '@/entities/generation/model/generation-pokemon-store'
-import { GenerationPokemonList } from '@/features/generation-pokemon-list'
-
-import { GenerationPokemonDetail } from './GenerationPokemonDetail'
+import { getGenerationPokemonStore } from '@/entities/generation'
+import {
+  GenerationPokemonDetail,
+  GenerationPokemonList,
+} from '@/features/generation-pokemon-list'
 
 import './GenerationCard.css'
 
@@ -28,22 +28,13 @@ type GenerationCardProps = {
 export const GenerationCard = memo(({ generation }: GenerationCardProps) => {
   const store = getGenerationPokemonStore(generation.id)
 
-  const fetchGenerationPokemonList = useStore(
-    store,
-    (state) => state.fetchGenerationPokemonList,
-  )
-
-  useEffect(() => {
-    void fetchGenerationPokemonList()
-  }, [fetchGenerationPokemonList])
-
   return (
     <div className="generation-card">
       <h2 className="generation-card__title">Generation {generation.id}</h2>
 
       <GenerationPokemonDetail store={store} />
 
-      <div className="generation-card__pokemon">
+      <div className="generation-card__pokemon-list">
         <GenerationPokemonList store={store} />
       </div>
     </div>

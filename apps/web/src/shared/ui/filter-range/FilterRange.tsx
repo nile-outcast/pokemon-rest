@@ -9,6 +9,8 @@ import type { RangeValue } from '@/shared/types/values'
 import './FilterRange.css'
 
 interface FilterRangeProps {
+  /** Подпись группы для скринридеров */
+  ariaLabel: string
   /** Применённое значение — живёт у родителя, чтобы не теряться при закрытии */
   value: RangeValue
   /** Границы справочника: клампим ввод, чтобы не уходить за реальные данные */
@@ -49,11 +51,12 @@ function createDraftSchema(range: NumberRange) {
  * Фильтр числового диапазона: поля «от» и «до» плюс кнопка «Применить».
  *
  * Ввод не трогает применённое значение — оно меняется только по кнопке,
- * которая заодно закрывает дропдаун. Radix размонтирует панель при
+ * которая заодно закрывает дропдаун. Base UI размонтирует панель при
  * закрытии, поэтому черновик при каждом открытии стартует от
  * применённого значения.
  */
 export function FilterRange({
+  ariaLabel,
   value,
   range,
   onChange,
@@ -103,7 +106,7 @@ export function FilterRange({
   }
 
   return (
-    <div className="filter-range">
+    <div className="filter-range" role="group" aria-label={ariaLabel}>
       {/*
         Grid с двумя рядами: подписи и инпуты. Разделитель попадает во
         второй ряд, поэтому `align-self: center` ставит его строго по

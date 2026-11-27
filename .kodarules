@@ -12,7 +12,7 @@ packages/shared — zod-контракты.
 3. Проверку отсутствующего значения делай только гвардами `isNullish`, `isDefined` и т.д. из 'typescript-extended-types'.
    Запрещено вручную `value === null`, `value !== null`, `value === undefined`.
 4. Нативные `enum` запрещены (erasableSyntaxOnly): используй union-типы или `as const` + union.
-5. Типы импортируй через `import type` и алиас `@/`, а не относительными путями.
+5. Типы импортируй через `import type`; между слоями — алиас `@/`, внутри слайса — относительный путь.
 
 ПРИМЕРЫ:
 ```ts
@@ -35,14 +35,28 @@ if (pokemon !== null) { ... }
 
 СТРУКТУРА (FSD):
 - `apps/web/src/app/` — вход и глобальные стили: `main.tsx`, `app.tsx`, `styles/`
-- `apps/web/src/pages/` — страницы, компоненты в `ui/`
+- `apps/web/src/pages/` — страницы, компоненты в `ui/`, публичный вход через `index.ts`
+- `apps/web/src/widgets/` — самостоятельные блоки страниц (списки, шапка), публичный вход через `index.ts`
 - `apps/web/src/features/` — фичи, публичный вход через `index.ts`, компоненты в `ui/`
-- `apps/web/src/entities/` — сущности: стор в `model/`, типы в `types.ts`
-- `apps/web/src/shared/` — переиспользуемое: `config/`, `helpers/`, `models/`, `types/`, `hooks`
-  Фабрики слайсов и моделей (`create-*-slice`, `create-*-model`) — в `shared/models`,
-  контракты — в `shared/types`.
+- `apps/web/src/entities/` — сущности: стор в `model/`, публичные типы в `types.ts`,
+  отображение сущности в `ui/`, публичный вход через `index.ts`
+- `apps/web/src/shared/` — переиспользуемое: `config/`, `helpers/`, `models/`, `types/`, `hooks`, `ui`
+  Общие UI-компоненты в `shared/ui` могут быть типизированы на общих контрактах
+  из `packages/shared` (например `BaseEntity`, `NumberRange`) и на общих типах
+  из `shared/types`; всё, что знает о конкретном домене, живёт в `entities`/`features`.
+  Общие фабрики слайсов и моделей (`create-*-slice`, `create-*-model`) — в `shared/models`.
+  Доменные фабрики, которым нужны контракты сущности, допустимы в `entities/*/model`.
+  Контракты — в `shared/types`.
 - `packages/shared/` — zod-контракты и TS-типы для API (общие с apps/api).
 - `apps/api/` — Fastify-сервер: `plugins/`, `routes/`, `db/`, `scripts/`.
+
+ИМПОРТЫ (FSD):
+- Импорт из слайса — только через его публичный `index.ts`; глубокие импорты
+  вида `@/entities/x/model/...` или `@/pages/x/ui/...` запрещены.
+- Слои импортируют только вниз: `app → pages → widgets → features → entities → shared`.
+- Cross-imports внутри одного слоя запрещены (feature не импортирует feature,
+  entity не импортирует entity). Общую связку собирает слой выше: widgets или pages.
+- Внутри слайса используй относительные пути, между слоями — алиас `@/`.
 
 КОМАНДЫ:
 - `npm run dev:web` — дев-сервер фронтенда

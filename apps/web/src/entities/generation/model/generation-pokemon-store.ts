@@ -7,34 +7,10 @@ import { createStore } from 'zustand/vanilla'
 
 import { toErrorMessage } from '@/shared/helpers/to-error-message'
 import { createApiRequest } from '@/shared/models/create-api-request'
-import {
-  createLoadingStageModel,
-  type LoadingStageModel,
-} from '@/shared/models/create-loading-stage-model'
-import {
-  createPaginationModel,
-  type PaginationModel,
-} from '@/shared/models/create-pagination-model'
+import { createLoadingStageModel } from '@/shared/models/create-loading-stage-model'
+import { createPaginationModel } from '@/shared/models/create-pagination-model'
 
-/**
- * Срез состояния одного поколения покемонов.
- */
-interface GenerationPokemonState {
-  items: Array<GenerationPokemonCard>
-  /**
-   * Индекс выбранного покемона, а не его id: переключение стрелками
-   * оперирует соседними позициями списка. По умолчанию выбран первый.
-   */
-  selectedIndex: number
-  pagination: PaginationModel
-  loadingStage: LoadingStageModel
-  loadingMoreStage: LoadingStageModel
-  selectPokemon: (index: number) => void
-  selectPrevPokemon: VoidFunction
-  selectNextPokemon: VoidFunction
-  fetchGenerationPokemonList: () => Promise<void>
-  fetchGenerationPokemonNextPage: () => Promise<void>
-}
+import type { GenerationPokemonState } from '../types'
 
 /**
  * Индекс карточки в списке либо `null`, если карточки там нет.

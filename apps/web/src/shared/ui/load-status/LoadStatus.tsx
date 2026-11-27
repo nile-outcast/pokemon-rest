@@ -1,4 +1,4 @@
-import { Button } from '../button/Button'
+import { Button } from '@/shared/ui/button/Button'
 
 import './LoadStatus.css'
 
