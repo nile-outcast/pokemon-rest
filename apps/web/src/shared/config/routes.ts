@@ -2,7 +2,7 @@
 export const routes = {
   home: '/',
   pokedex: '/pokedex',
-  legendaries: '/legendaries',
+  generations: '/generations',
 } as const
 
 // Union-тип путей
@@ -12,5 +12,5 @@ export type RouteKey = (typeof routes)[keyof typeof routes]
 export const navItems: Array<{ key: RouteKey; label: string }> = [
   { key: routes.home, label: 'Home' },
   { key: routes.pokedex, label: 'Pokédex' },
-  { key: routes.legendaries, label: 'Legendaries' },
+  { key: routes.generations, label: 'Generations' },
 ]

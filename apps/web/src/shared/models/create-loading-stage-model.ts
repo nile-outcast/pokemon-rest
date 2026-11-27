@@ -36,18 +36,18 @@ export interface LoadingStageModel extends Readonly<LoadingStageData> {
   readonly isInitial: boolean
   readonly isError: boolean
   readonly isFinished: boolean
-  loading: () => void
-  success: () => void
+  loading: VoidFunction
+  success: VoidFunction
   error: (message?: Nullable<string>) => void
-  reset: () => void
+  reset: VoidFunction
 }
 
 /**
  * Создаёт вложенную под-модель «стадия загрузки».
  *
- * В отличие от `createLoadingSlice`, который микшируется в стор плоским
- * слоем, вся под-модель лежит в одной ключ-области (`path`) и доступна как
- * `get().reloadingStage.isLoading`.
+ * В отличие от плоского среза, который микшируется в стор верхним
+ * уровнем, вся под-модель лежит в одной ключ-области (`path`) и доступна
+ * как `get().reloadingStage.isLoading`.
  *
  * Как это работает:
  * - значение статуса лежит в поле `loadStatus` самого объекта стадии;

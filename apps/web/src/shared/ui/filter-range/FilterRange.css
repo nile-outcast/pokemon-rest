@@ -18,7 +18,7 @@
 
 .filter-range__caption {
   justify-self: start;
-  font: 500 12px/145% var(--sans);
+  font-size: 12px;
   color: var(--text-prime);
   cursor: pointer;
   user-select: none;
@@ -54,7 +54,7 @@
 .filter-range__input {
   width: 100%;
   padding: 6px 8px;
-  font: 14px/145% var(--sans);
+  font-size: 14px;
   color: var(--text-second);
   background: var(--bg);
   border: 1px solid var(--border);
@@ -88,7 +88,7 @@
 
 .filter-range__apply {
   padding: 6px 12px;
-  font: 500 13px/145% var(--sans);
+  font-size: 14px;
   color: var(--text-second);
   background: var(--accent-bg);
   border: 1px solid var(--accent-border);

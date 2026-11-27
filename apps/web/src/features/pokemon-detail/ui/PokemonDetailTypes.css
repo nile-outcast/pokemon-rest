@@ -10,6 +10,7 @@
   font-size: 12px;
   line-height: 12px;
   color: var(--text-prime);
+  text-transform: capitalize;
   border-radius: 12px;
   box-shadow: 0px -2px 0px 0px #0000002e inset;
 }

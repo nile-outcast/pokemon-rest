@@ -44,10 +44,10 @@ export interface PaginationModel extends Readonly<PaginationData> {
   readonly hasMore: boolean
 
   setPage: (pageNumber: number) => void
-  next: () => void
-  previous: () => void
+  next: VoidFunction
+  previous: VoidFunction
   setTotal: (total: number) => void
-  reset: () => void
+  reset: VoidFunction
 }
 
 const DEFAULT_LIMIT = 10

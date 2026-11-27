@@ -24,6 +24,8 @@ export const pokemonTable = pgTable(
     spriteUrl: text('sprite_url'),
     // Цвет вида — из pokemon-species.color (10 цветов вида)
     color: text('color').notNull(),
+    // Описание вида — последний en flavor_text из pokemon-species.
+    description: text('description'),
     // Поколение — id из pokemon-species.generation (1..9), фронт рендерит «Generation {id}»
     generationId: smallint('generation_id').notNull(),
   },
@@ -31,7 +33,23 @@ export const pokemonTable = pgTable(
     uniqueIndex('pokemon_name_unique').on(table.name),
     index('pokemon_attack_idx').on(table.attack),
     index('pokemon_experience_idx').on(table.baseExperience),
+    index('pokemon_generation_id_idx').on(table.generationId),
   ],
+)
+
+/**
+ * Справочник поколений (generation-i, generation-ii, ...).
+ *
+ * Наполняется сидом из pokemon-species.generation — отдельного запроса
+ * к /generation нет, id и name приходят вместе с видом покемона.
+ */
+export const generationsTable = pgTable(
+  'generations',
+  {
+    id: integer('id').primaryKey(),
+    name: text('name').notNull(),
+  },
+  (table) => [uniqueIndex('generations_name_unique').on(table.name)],
 )
 
 /** Справочник типов (electric, fire, ...) */

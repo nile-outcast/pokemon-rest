@@ -1,38 +1,17 @@
 import {
   pokemonListQuerySchema,
   type PokemonFiltersResponse,
-  type PokemonListQuery,
 } from '@pokemon-rest/shared'
-import type { Nullable } from 'typescript-extended-types'
 
 import { toErrorMessage } from '@/shared/helpers/to-error-message'
 import { readQueryParams } from '@/shared/helpers/url-query'
 import { createApiRequest } from '@/shared/models/create-api-request'
-import {
-  createLoadingStageModel,
-  type LoadingStageModel,
-} from '@/shared/models/create-loading-stage-model'
-import {
-  createValueModel,
-  type ValueModel,
-} from '@/shared/models/create-value-model'
+import { createLoadingStageModel } from '@/shared/models/create-loading-stage-model'
+import { createValueModel } from '@/shared/models/create-value-model'
 import type { SliceCreator } from '@/shared/types/slice-creator'
 import type { RangeValue } from '@/shared/types/values'
 
-type PokemonFilters = Omit<PokemonListQuery, 'limit' | 'offset'>
-
-export interface PokemonFiltersSlice {
-  readonly search: ValueModel
-  readonly types: ValueModel<Array<number>>
-  readonly attack: ValueModel<RangeValue>
-  readonly experience: ValueModel<RangeValue>
-
-  readonly filters: () => PokemonFilters
-
-  filtersCatalog: Nullable<PokemonFiltersResponse>
-  filtersLoadingStage: LoadingStageModel
-  fetchFiltersCatalog: () => Promise<void>
-}
+import type { PokemonFiltersSlice } from '../types'
 
 const filtersRequest = createApiRequest<PokemonFiltersResponse>({
   path: '/pokemon/filters',

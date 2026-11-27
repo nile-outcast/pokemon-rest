@@ -22,6 +22,20 @@
       "when": 1794302490611,
       "tag": "0002_pokemon_details",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794916340199,
+      "tag": "0003_generations",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795417949835,
+      "tag": "0004_pokemon_description",
+      "breakpoints": true
     }
   ]
 }

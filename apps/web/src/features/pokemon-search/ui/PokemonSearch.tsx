@@ -1,6 +1,6 @@
 import type { ChangeEvent, KeyboardEvent } from 'react'
 
-import { usePokemonStore } from '@/entities/pokemon/model/pokemon-store'
+import { usePokemonStore } from '@/entities/pokemon'
 
 import './PokemonSearch.css'
 

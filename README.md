@@ -68,13 +68,22 @@ Vite запустится на `localhost:5173`. Запросы к `/api/*` пр
 
 ## Эндпоинты
 
-| Метод   | Путь                           | Описание                        |
-|---------|--------------------------------|---------------------------------|
-| `GET`   | `/health`                      | статус сервера                  |
-| `GET`   | `/api/pokemon`                 | список с фильтрами              |
-| `GET`   | `/api/pokemon/:id`             | детали покемона для модалки     |
-| `GET`   | `/api/pokemon/filters`         | справочник для UI               |
-| `GET`   | `/docs`                        | Swagger UI                      |
+| Метод   | Путь                                | Описание                        |
+|---------|-------------------------------------|---------------------------------|
+| `GET`   | `/health`                           | статус сервера                  |
+| `GET`   | `/api/pokemon/list`                 | список с фильтрами              |
+| `GET`   | `/api/pokemon/:id`                  | детали покемона для модалки     |
+| `GET`   | `/api/pokemon/filters`              | справочник для UI               |
+| `GET`   | `/api/generation/list`              | список поколений                |
+| `GET`   | `/api/generation/:id/pokemon/list`  | покемоны поколения              |
+| `GET`   | `/docs`                             | Swagger UI                      |
+
+### Поколения
+
+`GET /api/generation/list` возвращает `{ items: [{ id, name }], total }`, а
+`GET /api/generation/:id/pokemon/list` — `{ items: [{ id, name, spriteUrl, color, description, baseExperience, hp, attack, defense, specialAttack, specialDefense }], total }`.
+Оба принимают `offset` (по умолч. 0) и `limit` (по умолч. 20, макс 100).
+Для несуществующего поколения второй эндпоинт отдаёт `404` — `{ message }`.
 
 ### Детальная карточка
 

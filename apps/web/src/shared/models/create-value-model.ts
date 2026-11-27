@@ -1,8 +1,8 @@
 import type { SetStateAction } from 'react'
 import { isFunction } from 'typescript-extended-types'
 
-import { setSubModel } from '../helpers/set-sub-model'
-import type { SubModelCreator } from '../types/sub-model-creator'
+import { setSubModel } from '@/shared/helpers/set-sub-model'
+import type { SubModelCreator } from '@/shared/types/sub-model-creator'
 
 type ValueModelConfig<Value = string> = {
   initialValue: Value
@@ -11,7 +11,7 @@ type ValueModelConfig<Value = string> = {
 export interface ValueModel<Value = string> {
   value: Value
   setValue: (value: SetStateAction<Value>) => void
-  resetValue: () => void
+  resetValue: VoidFunction
 }
 
 export const createValueModel =

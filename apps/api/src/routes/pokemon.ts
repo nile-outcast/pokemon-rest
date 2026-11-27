@@ -1,10 +1,10 @@
 import {
-  pokemonDetailParamsSchema,
+  idParamsSchema,
+  notFoundResponseSchema,
   pokemonDetailSchema,
   pokemonFiltersResponseSchema,
   pokemonListQuerySchema,
   pokemonListResponseSchema,
-  pokemonNotFoundResponseSchema,
   type PokemonType,
 } from '@pokemon-rest/shared'
 import { and, count, eq, gte, ilike, inArray, lte, SQL, sql } from 'drizzle-orm'
@@ -56,9 +56,9 @@ function buildConditions(query: {
 }
 
 export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
-  // GET /api/pokemon — список с фильтрами и пагинацией
+  // GET /api/pokemon/list — список с фильтрами и пагинацией
   app.get(
-    '/pokemon',
+    '/pokemon/list',
     {
       schema: {
         querystring: pokemonListQuerySchema,
@@ -179,10 +179,10 @@ export const pokemonRoute: FastifyPluginAsyncZod = async (app) => {
     '/pokemon/:id',
     {
       schema: {
-        params: pokemonDetailParamsSchema,
+        params: idParamsSchema,
         response: {
           200: pokemonDetailSchema,
-          404: pokemonNotFoundResponseSchema,
+          404: notFoundResponseSchema,
         },
       },
     },

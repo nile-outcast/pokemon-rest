@@ -1,17 +1,19 @@
-import type { PokemonOption } from '@pokemon-rest/shared'
+import type { BaseEntity } from '@pokemon-rest/shared'
 
 import './FilterMultiSelect.css'
 
 interface FilterMultiSelectProps {
-  options: Array<PokemonOption>
+  options: Array<BaseEntity>
   selected: Array<number>
   onChange: (id: number) => void
+  /** Подпись группы для скринридеров */
+  ariaLabel: string
 }
 
 /**
  * Выпадающий список с множественным выбором.
  *
- * Компонент контролируемый: Radix размонтирует панель при закрытии, поэтому
+ * Компонент контролируемый: Base UI размонтирует панель при закрытии, поэтому
  * выбор не может жить в его собственном state — иначе сбрасывался бы после
  * каждого закрытия и выглядел как одиночный выбор.
  */
@@ -19,13 +21,10 @@ export function FilterMultiSelect({
   options,
   selected,
   onChange,
+  ariaLabel,
 }: FilterMultiSelectProps) {
   return (
-    <div
-      className="filter-multi-select"
-      role="group"
-      aria-label="Типы покемонов"
-    >
+    <div className="filter-multi-select" role="group" aria-label={ariaLabel}>
       {options.map((type, index) => {
         const isSelected = selected.includes(type.id)
 
